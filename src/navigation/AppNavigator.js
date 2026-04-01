@@ -4,10 +4,10 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
 // Import từ các thư mục mới
-import MatrixScreen from '../screens/MatrixScreen/MatrixScreen';
-import FocusScreen from '../screens/FocusScreen/FocusScreen';
-import StatsScreen from '../screens/StatsScreen/StatsScreen';
-import HabitsScreen from '../screens/HabitsScreen/HabitsScreen';
+import MatrixScreen from '../Screens/MatrixScreen/MatrixScreen';
+import FocusScreen from '../Screens/FocusScreen/FocusScreen';
+import StatsScreen from '../Screens/StatsScreen/StatsScreen';
+import HabitsScreen from '../Screens/HabitsScreen/HabitsScreen';
 
 const Tab = createBottomTabNavigator();
 
