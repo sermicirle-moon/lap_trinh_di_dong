@@ -6,10 +6,10 @@ import { createDrawerNavigator } from '@react-navigation/drawer'; // THÊM DÒNG
 import { Ionicons } from '@expo/vector-icons';
 
 // Import màn hình
-import MatrixScreen from '../Screens/MatrixScreen/MatrixScreen';
-import FocusScreen from '../Screens/FocusScreen/FocusScreen';
-import StatsScreen from '../Screens/StatsScreen/StatsScreen';
-import TaskScreen from '../Screens/TaskScreen/TaskScreen';
+import MatrixScreen from './Screens/MatrixScreen/MatrixScreen';
+import FocusScreen from './Screens/FocusScreen/FocusScreen';
+import StatsScreen from './Screens/StatsScreen/StatsScreen';
+import TaskScreen from './Screens/TaskScreen/TaskScreen';
 
 // Import Sidebar tự custom của bạn
 import CustomDrawer from '../Components/CustomDrawer';
