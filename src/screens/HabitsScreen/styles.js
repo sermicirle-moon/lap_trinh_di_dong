@@ -131,6 +131,13 @@ export const styles = StyleSheet.create({
     fontSize: 14, 
     fontWeight: '600' 
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    height: 50, // Cố định chiều cao để không bị giật khi hiện ô tìm kiếm
+  },
   fab: { 
     position: 'absolute', 
     right: 20, 
