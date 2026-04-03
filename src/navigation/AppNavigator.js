@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, Modal, TouchableOpacity, StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigation } from '@react-navigation/native'; // <-- THÊM useNavigation
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createDrawerNavigator } from '@react-navigation/drawer'; // THÊM DÒNG NÀY
+import { createDrawerNavigator } from '@react-navigation/drawer';
+import { createNativeStackNavigator } from '@react-navigation/native-stack'; // <-- THÊM STACK
 import { Ionicons } from '@expo/vector-icons';
 
 // Import màn hình
@@ -10,16 +11,25 @@ import MatrixScreen from '../Screens/MatrixScreen/MatrixScreen';
 import FocusScreen from '../Screens/FocusScreen/FocusScreen';
 import StatsScreen from '../Screens/StatsScreen/StatsScreen';
 import TaskScreen from '../Screens/TaskScreen/TaskScreen';
-
-// Import Sidebar tự custom của bạn
 import CustomDrawer from '../Components/CustomDrawer';
 
-const Tab = createBottomTabNavigator();
-const Drawer = createDrawerNavigator(); // THÊM DÒNG NÀY
+// Import các màn hình "Chức năng thêm" (Ví dụ)
+import HabitsScreen from '../Screens/HabitsScreen/HabitsScreen';
 
-// --- PHẦN 1: GÓI GỌN THANH BOTTOM TAB VÀ MODAL VÀO MỘT FUNCTION ---
+const Tab = createBottomTabNavigator();
+const Drawer = createDrawerNavigator();
+const Stack = createNativeStackNavigator(); // Khởi tạo Stack
+
+// --- PHẦN 1: BOTTOM TAB VÀ MODAL ---
 function BottomTabGroup() {
   const [isMoreMenuVisible, setMoreMenuVisible] = useState(false);
+  const navigation = useNavigation(); // <-- Khởi tạo công cụ điều hướng
+
+  // Hàm xử lý chung khi ấn vào một mục trong Modal
+  const handleNavigate = (screenName) => {
+    setMoreMenuVisible(false); // 1. Đóng Modal lại
+    navigation.navigate(screenName); // 2. Lệnh chuyển sang trang mới
+  };
 
   return (
     <>
@@ -43,6 +53,7 @@ function BottomTabGroup() {
         <Tab.Screen name="Focus" component={FocusScreen} options={{ title: 'Tập trung' }} />
         <Tab.Screen name="Stats" component={StatsScreen} options={{ title: 'Thống kê' }} />
 
+        
         <Tab.Screen 
           name="More" 
           component={View} 
@@ -56,24 +67,29 @@ function BottomTabGroup() {
         />
       </Tab.Navigator>
 
-      {/* Modal hiện bảng Menu (Giữ nguyên của bạn) */}
+      {/* BẢNG MODAL */}
       <Modal visible={isMoreMenuVisible} transparent={true} animationType="slide" onRequestClose={() => setMoreMenuVisible(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setMoreMenuVisible(false)}>
           <TouchableOpacity activeOpacity={1} style={styles.menuContainer}>
             <View style={styles.dragHandle} />
             <Text style={styles.menuHeader}>Chức năng khác</Text>
-            <TouchableOpacity style={styles.menuItem} onPress={() => setMoreMenuVisible(false)}>
+            
+            {/* THAY ĐỔI Ở ĐÂY: Gắn sự kiện handleNavigate cùng tên màn hình đích */}
+            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigate('Habits')}>
               <Ionicons name="leaf-outline" size={24} color="#2D9CDB" />
               <Text style={styles.menuText}>Thói quen (Habits)</Text>
             </TouchableOpacity>
+            
             <TouchableOpacity style={styles.menuItem} onPress={() => setMoreMenuVisible(false)}>
               <Ionicons name="folder-outline" size={24} color="#2D9CDB" />
               <Text style={styles.menuText}>Quản lý Dự án</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem} onPress={() => setMoreMenuVisible(false)}>
+            
+            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigate('Settings')}>
               <Ionicons name="settings-outline" size={24} color="#2D9CDB" />
               <Text style={styles.menuText}>Cài đặt hệ thống</Text>
             </TouchableOpacity>
+            
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
@@ -81,24 +97,35 @@ function BottomTabGroup() {
   );
 }
 
-// --- PHẦN 2: LẤY DRAWER BỌC RA NGOÀI CÙNG ---
+// --- PHẦN 2: DRAWER BỌC BOTTOM TAB ---
+function DrawerGroup() {
+  return (
+    <Drawer.Navigator
+      drawerContent={(props) => <CustomDrawer {...props} />}
+      screenOptions={{ headerShown: false, swipeEnabled: false, drawerStyle: { width: '85%' } }}
+    >
+      <Drawer.Screen name="MainTabs" component={BottomTabGroup} />
+    </Drawer.Navigator>
+  );
+}
+
+// --- PHẦN 3: STACK BỌC TẤT CẢ (Lớp ngoài cùng) ---
+// Lý do: Các trang phụ như Cài đặt, Thói quen phải mở toàn màn hình, che mất cả thanh Bottom Tab.
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      <Drawer.Navigator
-        drawerContent={(props) => <CustomDrawer {...props} />} // Gắn giao diện Sidebar của bạn vào
-        screenOptions={{
-          headerShown: false, // Ẩn header mặc định
-          swipeEnabled: false, // Tắt vuốt mở Sidebar ở mọi nơi (chỉ cho phép mở bằng nút Hamburger ở TaskScreen)
-          drawerStyle: { width: '85%' },
-        }}
-      >
-        {/* Đưa toàn bộ cụm BottomTab ở trên vào làm màn hình của Drawer */}
-        <Drawer.Screen name="MainTabs" component={BottomTabGroup} />
-      </Drawer.Navigator>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {/* Màn hình chính (chứa Drawer và Tabs) */}
+        <Stack.Screen name="Root" component={DrawerGroup} />
+        
+        {/* Các màn hình phụ bạn muốn điều hướng tới từ Modal */}
+        <Stack.Screen name="Habits" component={HabitsScreen} />
+        
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
 
 // --- PHẦN 3: STYLES CHO MODAL ---
 const styles = StyleSheet.create({
