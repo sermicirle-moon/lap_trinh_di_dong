@@ -3,7 +3,7 @@ import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Aler
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from './styles';
 
-export default function MatrixScreen() {
+export default function MatrixScreen({ navigation }) {
   // 1. Quản lý trạng thái (State)
   const [inputText, setInputText] = useState(''); // Lưu chữ người dùng đang gõ
   const [tasks, setTasks] = useState([
@@ -87,7 +87,19 @@ export default function MatrixScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+    {/* Header với nút menu bên phải */}
+    <View style={styles.header}>
       <Text style={styles.headerTitle}>Eisenhower Matrix</Text>
+      <TouchableOpacity
+        onPress={() => {
+          const parentNav = navigation.getParent?.();
+          if (parentNav?.openDrawer) parentNav.openDrawer();
+        }}
+        style={styles.menuButton}
+      >
+        <Ionicons name="menu-outline" size={28} color="#333" />
+      </TouchableOpacity>
+    </View>
 
       {/* Ô nhập công việc mới */}
       <View style={styles.inputContainer}>

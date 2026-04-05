@@ -7,8 +7,8 @@ const CustomDrawer = ({ navigation }) => {
   const insets = useSafeAreaInsets();
 
   // Hàm hỗ trợ render từng dòng List
-  const renderListItem = (iconName, title, count, color = "#666", isFolder = false) => (
-    <TouchableOpacity style={styles.listItem}>
+  const renderListItem = (iconName, title, count, color = "#666", isFolder = false, onPress = null) => (
+    <TouchableOpacity style={styles.listItem} onPress={onPress}>
       <View style={styles.listLeft}>
         <Ionicons name={iconName} size={22} color={color} style={styles.listIcon} />
         <Text style={[styles.listTitle, isFolder && { fontWeight: 'bold' }]}>{title}</Text>

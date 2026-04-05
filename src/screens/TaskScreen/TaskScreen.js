@@ -10,7 +10,13 @@ export default function TaskScreen({ navigation }) {
       {/* HEADER TÙY CHỈNH CHO MÀN HÌNH TASK */}
       <View style={styles.header}>
         {/* Nút Hamburger mở Sidebar */}
-        <TouchableOpacity onPress={() => navigation.openDrawer()} style={styles.iconBtn}>
+        <TouchableOpacity
+          onPress={() => {
+            const parentNav = navigation.getParent ? navigation.getParent() : null;
+            if (parentNav && parentNav.openDrawer) parentNav.openDrawer();
+          }}
+          style={styles.iconBtn}
+        >
           <Ionicons name="menu-outline" size={28} color="#333" />
         </TouchableOpacity>
         
