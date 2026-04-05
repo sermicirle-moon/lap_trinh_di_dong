@@ -3,7 +3,7 @@ import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Aler
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from './styles';
 
-export default function HabitsScreen() {
+export default function HabitsScreen({ navigation }) {
   // Logic Chọn ngày
   const [selectedDate, setSelectedDate] = useState('16');
   
@@ -67,7 +67,16 @@ export default function HabitsScreen() {
           </View>
         ) : (
           <>
-            <Ionicons name="menu-outline" size={28} color="#333" />
+        <TouchableOpacity
+          onPress={() => {
+            if (navigation && navigation.getParent) {
+              const parentNav = navigation.getParent();
+              if (parentNav && parentNav.openDrawer) parentNav.openDrawer();
+            }
+          }}
+        >
+          <Ionicons name="menu-outline" size={28} color="#333" />
+        </TouchableOpacity>
             <Text style={styles.headerTitle}>Habits</Text>
             <TouchableOpacity onPress={() => setIsSearching(true)}>
               <Ionicons name="search-outline" size={24} color="#333" />

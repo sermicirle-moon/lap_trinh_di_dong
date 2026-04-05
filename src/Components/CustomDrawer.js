@@ -26,6 +26,7 @@ const CustomDrawer = ({ navigation }) => {
   const [tags, setTags] = useState([{ id: 't1', title: 'Ưu tiên cao', color: '#EB5757' }]);
   const [showAddMenu, setShowAddMenu] = useState(false);
 
+  
   // 3. TỰ ĐỘNG FETCH DỮ LIỆU TỪ GITHUB
   useEffect(() => {
     const fetchData = async () => {
