@@ -1,0 +1,85 @@
+{
+  "smartLists": {
+    "inbox": [],
+    "today": []
+  },
+  "folders": [
+    {
+      "id": "f1",
+      "title": "Công việc",
+      "isFolder": true,
+      "lists": [
+        {
+          "id": "l1",
+          "title": "Dự án Năng Suất",
+          "color": "#2D9CDB",
+          "tasks": []
+        },
+        {
+          "id": "l_1776068297638",
+          "title": "hjsdfs",
+          "tasks": [],
+          "color": "#2D9CDB"
+        },
+        {
+          "id": "list_1776069683957",
+          "title": "hello",
+          "icon": "list-outline",
+          "color": "#F2994A",
+          "tasks": [],
+          "createdAt": "2026-04-13T08:41:23.957Z",
+          "updatedAt": "2026-04-13T08:41:23.957Z"
+        }
+      ],
+      "updatedAt": "2026-04-13T08:41:23.957Z"
+    },
+    {
+      "id": "f2",
+      "title": "Cá nhân",
+      "isFolder": false,
+      "color": "#F2994A",
+      "tasks": []
+    },
+    {
+      "id": "qFC27hBE2z0",
+      "title": "hello",
+      "isFolder": false,
+      "tasks": [],
+      "color": "#2D9CDB"
+    },
+    {
+      "id": "DIXuCN2TDzg",
+      "title": "what tf",
+      "isFolder": true,
+      "icon": "briefcase",
+      "color": "#27AE60",
+      "lists": [
+        {
+          "id": "list_1776069740300",
+          "title": "lsfdj",
+          "icon": "list-outline",
+          "color": "#2D9CDB",
+          "tasks": [],
+          "createdAt": "2026-04-13T08:42:20.300Z",
+          "updatedAt": "2026-04-13T08:42:20.300Z"
+        }
+      ],
+      "createdAt": "2026-04-13T08:42:00.638Z",
+      "updatedAt": "2026-04-13T08:42:20.300Z",
+      "order": 1776069720638
+    }
+  ],
+  "tags": [
+    {
+      "id": "t1",
+      "title": "Ưu tiên cao",
+      "color": "#EB5757"
+    },
+    {
+      "id": "73sil-7Gd8g",
+      "title": "lfdgd",
+      "color": "#828282"
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}
