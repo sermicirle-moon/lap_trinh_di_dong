@@ -49,7 +49,6 @@ export default function TaskScreen({ route, navigation }) {
     <SafeAreaView style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-<<<<<<< HEAD
         {/* Nút Hamburger mở Sidebar */}
         <TouchableOpacity
           onPress={() => {
@@ -61,9 +60,6 @@ export default function TaskScreen({ route, navigation }) {
 
         
 
-=======
-        <TouchableOpacity onPress={() => navigation.getParent()?.openDrawer()} style={styles.iconBtn}>
->>>>>>> 12fa800b251f37a9fe01348bb65d0165e36d30c4
           <Ionicons name="menu-outline" size={28} color="#333" />
         </TouchableOpacity>
         
