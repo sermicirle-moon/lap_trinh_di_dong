@@ -16,11 +16,15 @@ export const useListManagement = () => {
   const [smartLists, setSmartLists] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [expandedFolders, setExpandedFolders] = useState({});
-
+  const [refreshKey, setRefreshKey] = useState(0); // Dùng để trigger refetch khi cần
+  
+  const refreshData = useCallback(() => {
+  setRefreshKey(prev => prev + 1);
+  }, []);
   // ===== LIFECYCLE =====
   useEffect(() => {
     fetchAllData();
-  }, []);
+  }, [refreshKey]);
 
   // ===== FETCH DATA =====
   const fetchAllData = useCallback(async () => {
