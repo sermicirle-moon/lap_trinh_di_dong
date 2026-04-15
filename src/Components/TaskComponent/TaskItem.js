@@ -5,7 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 const PRIORITY_COLORS = { 0: '#828282', 1: '#2D9CDB', 3: '#F2994A', 5: '#EB5757' };
 
 export default function TaskItem({ task, onToggle, onPressItem }) {
-  const isCompleted = task.status === 2;
+  // SỬA CHỖ NÀY: Dùng biến isCompleted từ Hook
+  const isCompleted = task.isCompleted; 
   const priorityColor = PRIORITY_COLORS[task.priority] || PRIORITY_COLORS[0];
 
   return (

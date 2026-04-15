@@ -1,0 +1,22 @@
+{
+ "users": [
+    {
+      "id": 1776191362655,
+      "email": "user@gmail.com",
+      "password": "$2b$08$73ttJ8jw/yxs8QQd/jRQtOQIB0RBzBnOwRdL5caXTeSaaJhD0IoMq",
+      "name": "User1"
+    },
+    {
+      "id": 1776192497569,
+      "email": "user1@gmail.com",
+      "password": "$2b$08$KWCIUX4RA/EZJJH9dT0UxOWPZ23EikcHWwhj1lF3E3zo3ok15LJTq",
+      "name": "User1"
+    },
+    {
+      "id": 1776193048793,
+      "email": "user2@gmail.com",
+      "password": "$2b$08$2M0IxEHGszrZuT6r7LXO/u3dq2LStjh9wHTPMT3zUmj6/8Na2ueVW",
+      "name": "User2"
+    }
+  ]
+}
