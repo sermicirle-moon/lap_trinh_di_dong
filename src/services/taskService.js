@@ -1,15 +1,13 @@
-import { apiClient } from './apiClient';
+import { authFetch } from './apiClient';
 
 export const taskService = {
-  getTasksByList: (listId) => {
-    return apiClient(`/tasks?listId=${listId}`);
-  },
+  getTasksByList: (listId) => authFetch(`/tasks?listId=${listId}`).then(res => res.json()),
 
-  getAllTasks: () => apiClient('/tasks'),
+  getAllTasks: () => authFetch('/tasks').then(res => res.json()),
 
-  createTask: (newTask) => apiClient('/tasks', 'POST', newTask),
+  createTask: (newTask) => authFetch('/tasks', { method: 'POST', body: JSON.stringify(newTask) }).then(res => res.json()),
 
-  updateTask: (taskId, updatedData) => apiClient(`/tasks/${taskId}`, 'PUT', updatedData),
+  updateTask: (taskId, updatedData) => authFetch(`/tasks/${taskId}`, { method: 'PUT', body: JSON.stringify(updatedData) }).then(res => res.json()),
 
-  deleteTask: (taskId) => apiClient(`/tasks/${taskId}`, 'DELETE'),
+  deleteTask: (taskId) => authFetch(`/tasks/${taskId}`, { method: 'DELETE' }),
 };
