@@ -3,7 +3,7 @@ const jsonServer = require('json-server')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
 const server = jsonServer.create()
-const router = jsonServer.router('authendb.json')
+const router = jsonServer.router('db_full.json')
 const middlewares = jsonServer.defaults()
 
 const SECRET_KEY = 'your-secret-key-change-in-production'
