@@ -81,5 +81,51 @@
       "color": "#828282"
     }
   ],
+  "tasks": [
+    {
+      "id": "SzvhekKFDgw",
+      "listId": "inbox",
+      "title": "sdfsd",
+      "isCompleted": true,
+      "priority": 3,
+      "tags": [],
+      "dueDate": null,
+      "createdAt": "2026-04-15T04:11:31.343Z",
+      "updatedAt": "2026-04-15T04:11:38.598Z"
+    },
+    {
+      "id": "vG2Ttd10PYI",
+      "listId": "today",
+      "title": "fasdf",
+      "isCompleted": true,
+      "priority": 3,
+      "tags": [],
+      "dueDate": null,
+      "createdAt": "2026-04-15T04:11:46.487Z",
+      "updatedAt": "2026-04-15T04:30:01.923Z"
+    },
+    {
+      "id": "dlWkwgYWbO4",
+      "listId": "l1",
+      "title": "ádfasvcv",
+      "isCompleted": false,
+      "priority": 0,
+      "tags": [],
+      "dueDate": null,
+      "createdAt": "2026-04-15T04:12:04.928Z",
+      "updatedAt": "2026-04-15T04:12:04.928Z"
+    },
+    {
+      "id": "ohxL0oTfADo",
+      "listId": "l1",
+      "title": "fsdfewcv",
+      "isCompleted": false,
+      "priority": 5,
+      "tags": [],
+      "dueDate": null,
+      "createdAt": "2026-04-15T04:12:12.438Z",
+      "updatedAt": "2026-04-15T04:12:12.438Z"
+    }
+  ],
   "$schema": "./node_modules/json-server/schema.json"
 }
