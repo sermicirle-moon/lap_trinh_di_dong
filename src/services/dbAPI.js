@@ -1,41 +1,81 @@
-import { apiClient } from './apiClient';
+import { authFetch, getUserId } from './apiClient';
 
 export const dbApi = {
-  // ===== FOLDERS & LISTS =====
-  // GET
-  getFolders: () => apiClient('/folders'),
-  getFolderById: (folderId) => apiClient(`/folders/${folderId}`),
-  
-  // POST - Tạo Folder hoặc List độc lập (dùng chung endpoint)
-  createFolder: (newFolder) => apiClient('/folders', 'POST', newFolder),
-  
-  // PUT - Cập nhật Folder, List, hoặc thêm/xóa list con trong folder
-  updateFolder: (folderId, updatedData) => apiClient(`/folders/${folderId}`, 'PUT', updatedData),
-  
-  // DELETE - Xóa Folder hoặc List độc lập
-  deleteFolder: (folderId) => apiClient(`/folders/${folderId}`, 'DELETE'),
+  // Folders
+  getFolders: async () => {
+    const res = await authFetch('/folders');
+    return res.json();
+  },
+  createFolder: async (data) => {
+    const userId = await getUserId();
+    const res = await authFetch('/folders', {
+      method: 'POST',
+      body: JSON.stringify({ ...data, userId }),
+    });
+    return res.json();
+  },
+  updateFolder: async (id, updates) => {
+    const res = await authFetch(`/folders/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+    return res.json();
+  },
+  deleteFolder: async (id) => {
+    return authFetch(`/folders/${id}`, { method: 'DELETE' });
+  },
 
-  // ===== SMART LISTS =====
-  getSmartLists: () => apiClient('/smartLists'),
-  updateSmartList: (listId, updatedData) => apiClient(`/smartLists/${listId}`, 'PUT', updatedData),
+  // Tags
+  getTags: async () => {
+    const res = await authFetch('/tags');
+    return res.json();
+  },
+  createTag: async (data) => {
+    const userId = await getUserId();
+    const res = await authFetch('/tags', {
+      method: 'POST',
+      body: JSON.stringify({ ...data, userId }),
+    });
+    return res.json();
+  },
+  updateTag: async (id, updates) => {
+    const res = await authFetch(`/tags/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+    return res.json();
+  },
+  deleteTag: async (id) => {
+    return authFetch(`/tags/${id}`, { method: 'DELETE' });
+  },
 
-  // ===== TAGS =====
-  // GET
-  getTags: () => apiClient('/tags'),
-  getTagById: (tagId) => apiClient(`/tags/${tagId}`),
-  
-  // POST
-  createTag: (newTag) => apiClient('/tags', 'POST', newTag),
-  
-  // PUT
-  updateTag: (tagId, updatedData) => apiClient(`/tags/${tagId}`, 'PUT', updatedData),
-  
-  // DELETE
-  deleteTag: (tagId) => apiClient(`/tags/${tagId}`, 'DELETE'),
+  // SmartLists (không cần userId vì là computed, nhưng vẫn gửi token)
+  getSmartLists: async () => {
+    const res = await authFetch('/smartLists');
+    return res.json();
+  },
 
-  // ===== TASKS =====
-  getTasks: () => apiClient('/tasks'),
-  createTask: (newTask) => apiClient('/tasks', 'POST', newTask),
-  updateTask: (taskId, updatedData) => apiClient(`/tasks/${taskId}`, 'PUT', updatedData),
-  deleteTask: (taskId) => apiClient(`/tasks/${taskId}`, 'DELETE'),
+  // Tasks (nếu có)
+  getTasks: async () => {
+    const res = await authFetch('/tasks');
+    return res.json();
+  },
+  createTask: async (data) => {
+    const userId = await getUserId();
+    const res = await authFetch('/tasks', {
+      method: 'POST',
+      body: JSON.stringify({ ...data, userId }),
+    });
+    return res.json();
+  },
+  updateTask: async (id, updates) => {
+    const res = await authFetch(`/tasks/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+    return res.json();
+  },
+  deleteTask: async (id) => {
+    return authFetch(`/tasks/${id}`, { method: 'DELETE' });
+  }
 };
