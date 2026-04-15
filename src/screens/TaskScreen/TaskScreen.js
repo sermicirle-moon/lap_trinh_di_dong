@@ -1,48 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, SectionList, Modal } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, SectionList, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-// IMPORT 2 COMPONENT VỪA TẠO VÀO ĐÂY
 import TaskItem from '../../Components/TaskComponent/TaskItem';
 import AddTaskModal from '../../Components/TaskComponent/AddTaskModal';
+
+// 👈 IMPORT BỘ NÃO VÀO
+import { useTaskManagement } from '../../hooks/useTaskManagement';
 
 const PRIORITY_COLORS = { 0: '#828282', 1: '#2D9CDB', 3: '#F2994A', 5: '#EB5757' };
 
 export default function TaskScreen({ route, navigation }) {
+  // Nhận dữ liệu từ Drawer truyền sang
   const listTitle = route.params?.listTitle || "Hộp thư đến";
-  const [tasks, setTasks] = useState(route.params?.tasks || []);
+  const listId = route.params?.listId || "inbox"; // Bắt buộc phải có List ID
+
+  // 👈 KẾT NỐI BỘ NÃO
+  const { 
+    activeTasks, 
+    completedTasks, 
+    isLoading, 
+    createTask, 
+    toggleTaskStatus 
+  } = useTaskManagement(listId);
   
   const [isAddModalVisible, setAddModalVisible] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
 
-  useEffect(() => {
-    setTasks(route.params?.tasks || []);
-  }, [route.params?.tasks]);
-
-  const activeTasks = tasks.filter(t => t.status !== 2);
-  const completedTasks = tasks.filter(t => t.status === 2);
+  // Gộp data cho SectionList
   const sections = [
     { title: '', data: activeTasks },
     ...(completedTasks.length > 0 ? [{ title: 'Đã hoàn thành', data: completedTasks }] : [])
   ];
 
-  const toggleTaskStatus = (id) => {
-    setTasks(tasks.map(task => task.id === id ? { ...task, status: task.status === 2 ? 0 : 2 } : task));
-  };
-
-  // Hàm HỨNG dữ liệu từ AddTaskModal gửi về
-  const handleAddNewTask = (taskData) => {
-    const newTask = {
-      id: Date.now().toString(),
-      title: taskData.title,
-      content: '', 
-      priority: taskData.priority,
-      status: 0,
-      dueDate: null, 
-      tags: taskData.tags 
-    };
-    setTasks([newTask, ...tasks]);
-    setAddModalVisible(false); // Thêm xong thì tự động đóng bảng
+  // Hàm xử lý lưu
+  const handleAddNewTask = async (taskData) => {
+    await createTask(taskData); // Gửi thẳng API
+    setAddModalVisible(false); // Đóng bảng
   };
 
   return (
@@ -71,7 +65,11 @@ export default function TaskScreen({ route, navigation }) {
       </View>
 
       {/* DANH SÁCH TASK */}
-      {tasks.length === 0 ? (
+      {isLoading ? (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color="#2D9CDB" />
+        </View>
+      ) : activeTasks.length === 0 && completedTasks.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="clipboard-outline" size={60} color="#D1D5DB" />
           <Text style={styles.emptyText}>Chưa có công việc nào.</Text>
@@ -80,11 +78,10 @@ export default function TaskScreen({ route, navigation }) {
         <SectionList
           sections={sections}
           keyExtractor={(item) => item.id}
-          // GỌI COMPONENT TASKITEM RA DÙNG CỰC KỲ GỌN NHẸ
           renderItem={({ item }) => (
             <TaskItem 
               task={item} 
-              onToggle={toggleTaskStatus} 
+              onToggle={toggleTaskStatus} // Gọi hàm toggle từ Hook
               onPressItem={(task) => setSelectedTask(task)} 
             />
           )}
@@ -100,15 +97,15 @@ export default function TaskScreen({ route, navigation }) {
         <Ionicons name="add" size={32} color="#FFF" />
       </TouchableOpacity>
 
-      {/* GỌI COMPONENT ADDTASKMODAL VÀ TRUYỀN PROPS CHO NÓ */}
+      {/* FORM THÊM TASK */}
       <AddTaskModal 
         isVisible={isAddModalVisible}
         currentListTitle={listTitle}
         onClose={() => setAddModalVisible(false)}
-        onSave={handleAddNewTask}
+        onSave={handleAddNewTask} // Đường ống lưu
       />
 
-      {/* MODAL CHI TIẾT TASK (Có thể tách thành Component thứ 3 sau này) */}
+      {/* MODAL CHI TIẾT */}
       <Modal visible={selectedTask !== null} animationType="fade" transparent>
         <View style={styles.detailModalOverlay}>
           <View style={styles.detailBox}>

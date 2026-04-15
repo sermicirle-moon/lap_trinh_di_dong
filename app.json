@@ -28,7 +28,8 @@
     "plugins": [
       "expo-web-browser",
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      "@react-native-community/datetimepicker"
     ]
   }
 }
