@@ -17,6 +17,12 @@
       "email": "user2@gmail.com",
       "password": "$2b$08$2M0IxEHGszrZuT6r7LXO/u3dq2LStjh9wHTPMT3zUmj6/8Na2ueVW",
       "name": "User2"
+    },
+    {
+      "id": 1776240035419,
+      "email": "admin@gmail.com",
+      "password": "$2b$08$17YHeZ32uM1xReqoAwtkqu6usfb.SUHuuE/xJ2Yl5PBgAh1XasJ4e",
+      "name": "Admin"
     }
   ],
   "folders": [
