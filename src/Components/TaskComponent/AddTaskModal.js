@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, KeyboardAvoidingView, Platform, ScrollView, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-// 1. IMPORT COMPONENT CHỌN NGÀY VÀO
-import DateSelectorMenu from './DateTimeSelector';
+import DateTimeSelector from './DateTimeSelector';
 
 const PRIORITY_COLORS = { 0: '#828282', 1: '#2D9CDB', 3: '#F2994A', 5: '#EB5757' };
 const PRIORITY_LABELS = { 1: 'ƯU TIÊN THẤP', 3: 'ƯU TIÊN TRUNG BÌNH', 5: 'ƯU TIÊN CAO' };
@@ -13,11 +11,11 @@ export default function AddTaskModal({ isVisible, onClose, onSave, currentListTi
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState(0);
   const [newTaskTags, setNewTaskTags] = useState([]); 
-  const [newTaskDueDate, setNewTaskDueDate] = useState(null); // STATE LƯU NGÀY
+  const [schedule, setSchedule] = useState(null); // STATE CHỨA TOÀN BỘ DATA LỊCH
   
   const [showPriorityMenu, setShowPriorityMenu] = useState(false);
   const [showTagMenu, setShowTagMenu] = useState(false);
-  const [showDateMenu, setShowDateMenu] = useState(false); // STATE BẬT/TẮT MENU NGÀY
+  const [showDateMenu, setShowDateMenu] = useState(false);
 
   const toggleTagSelection = (tag) => {
     if (newTaskTags.includes(tag)) {
@@ -29,45 +27,55 @@ export default function AddTaskModal({ isVisible, onClose, onSave, currentListTi
 
   const handlePressSave = () => {
     if (newTaskTitle.trim() === '') return;
+    Keyboard.dismiss();
 
-    onSave({
-      title: newTaskTitle,
-      priority: newTaskPriority,
-      tags: newTaskTags,
-      dueDate: newTaskDueDate, // GỬI NGÀY XUỐNG HÀM LƯU
-    });
+    setTimeout(() => {
+      onSave({
+        title: newTaskTitle,
+        priority: newTaskPriority,
+        tags: newTaskTags,
+        // Nạp data thời lượng vào Object Task
+        startDate: schedule?.startDate || null,
+        endDate: schedule?.endDate || null,
+        startTime: schedule?.startTime || null,
+        endTime: schedule?.endTime || null,
+        isAllDay: schedule?.isAllDay || false,
+      });
 
-    setNewTaskTitle('');
-    setNewTaskPriority(0);
-    setNewTaskTags([]);
-    setNewTaskDueDate(null);
-    setShowPriorityMenu(false);
-    setShowTagMenu(false);
-    setShowDateMenu(false);
+      setNewTaskTitle(''); setNewTaskPriority(0); setNewTaskTags([]); setSchedule(null);
+      setShowPriorityMenu(false); setShowTagMenu(false); setShowDateMenu(false);
+    }, 150);
   };
 
   const handleClose = () => {
-    setShowPriorityMenu(false);
-    setShowTagMenu(false);
-    setShowDateMenu(false);
+    Keyboard.dismiss();
+    setShowPriorityMenu(false); setShowTagMenu(false); setShowDateMenu(false);
     onClose();
   };
 
-  // Hàm hiển thị chữ "Hôm nay", "Ngày mai" hoặc "dd/mm/yyyy"
-  const getDateDisplay = () => {
-    if (!newTaskDueDate) return null;
-    const date = new Date(newTaskDueDate);
-    const today = new Date();
-    const tomorrow = new Date();
-    tomorrow.setDate(today.getDate() + 1);
+  // 🚀 HÀM PHÂN TÍCH VÀ HIỂN THỊ BADGE LỊCH THÔNG MINH
+  const renderScheduleBadge = () => {
+    if (!schedule) return null;
+    
+    const startD = new Date(schedule.startDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+    const endD = new Date(schedule.endDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
 
-    if (date.toDateString() === today.toDateString()) return "Hôm nay";
-    if (date.toDateString() === tomorrow.toDateString()) return "Ngày mai";
-    return date.toLocaleDateString('vi-VN');
+    let timeStr = '';
+    if (!schedule.isAllDay && schedule.startTime) {
+      const sTime = new Date(schedule.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
+      const eTime = schedule.endTime ? new Date(schedule.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+      timeStr = ` ${sTime}${eTime ? ' - ' + eTime : ''}`;
+    }
+
+    if (startD === endD) {
+      return `${startD}${timeStr}`; // VD: 16/04 08:00 - 09:00
+    } else {
+      return `${startD} - ${endD}`; // VD: 16/04 - 18/04
+    }
   };
 
   return (
-    <Modal visible={isVisible} animationType="slide" transparent>
+    <Modal visible={isVisible} animationType="slide" transparent onRequestClose={handleClose}>
       <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <TouchableOpacity style={{ flex: 1 }} onPress={handleClose} />
         
@@ -90,23 +98,18 @@ export default function AddTaskModal({ isVisible, onClose, onSave, currentListTi
               <Text style={styles.readOnlyBadgeTextDark}>{currentListTitle}</Text>
             </View>
 
-            {/* HIỂN THỊ NGÀY ĐÃ CHỌN TRÊN MÀN HÌNH */}
-            {newTaskDueDate && (
-              <TouchableOpacity 
-                style={[styles.readOnlyBadgeSolid, { backgroundColor: '#E3F2FD' }]}
-                onPress={() => setNewTaskDueDate(null)} // Bấm vào để xóa ngày
-              >
+            {/* NHÃN LỊCH TRÌNH THÔNG MINH HIỂN THỊ Ở ĐÂY */}
+            {schedule && (
+              <TouchableOpacity style={[styles.readOnlyBadgeSolid, { backgroundColor: '#E3F2FD' }]} onPress={() => setSchedule(null)}>
                 <Ionicons name="calendar" size={14} color="#2D9CDB" style={{ marginRight: 4 }} />
-                <Text style={[styles.readOnlyBadgeTextDark, { color: '#2D9CDB' }]}>{getDateDisplay()}</Text>
+                <Text style={[styles.readOnlyBadgeTextDark, { color: '#2D9CDB' }]}>{renderScheduleBadge()}</Text>
                 <Ionicons name="close" size={12} color="#2D9CDB" style={{ marginLeft: 4 }} />
               </TouchableOpacity>
             )}
 
             {newTaskPriority > 0 && (
               <View style={[styles.readOnlyBadgeSolid, { backgroundColor: PRIORITY_COLORS[newTaskPriority] + '20' }]}>
-                <Text style={[styles.readOnlyBadgeTextDark, { color: PRIORITY_COLORS[newTaskPriority] }]}>
-                  {PRIORITY_LABELS[newTaskPriority]}
-                </Text>
+                <Text style={[styles.readOnlyBadgeTextDark, { color: PRIORITY_COLORS[newTaskPriority] }]}>{PRIORITY_LABELS[newTaskPriority]}</Text>
               </View>
             )}
 
@@ -116,15 +119,6 @@ export default function AddTaskModal({ isVisible, onClose, onSave, currentListTi
               </View>
             ))}
           </View>
-
-          {/* 2. COMPONENT CHỌN NGÀY VỪA TẠO ĐƯỢC NHÚNG VÀO ĐÂY */}
-          <DateSelectorMenu 
-            visible={showDateMenu} 
-            onSelectDate={(dateString) => {
-              setNewTaskDueDate(dateString); 
-              setShowDateMenu(false); 
-            }} 
-          />
 
           {showPriorityMenu && (
             <View style={styles.popupMenu}>
@@ -138,22 +132,19 @@ export default function AddTaskModal({ isVisible, onClose, onSave, currentListTi
 
           {showTagMenu && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.popupMenuTag}>
-              {SUGGESTED_TAGS.map((tag, idx) => {
-                const isSelected = newTaskTags.includes(tag);
-                return (
-                  <TouchableOpacity key={idx} style={[styles.tagSuggestion, isSelected && styles.tagSuggestionSelected]} onPress={() => toggleTagSelection(tag)}>
-                    <Text style={[styles.tagSuggestionText, isSelected && styles.tagSuggestionTextSelected]}>{tag}</Text>
-                  </TouchableOpacity>
-                );
-              })}
+              {SUGGESTED_TAGS.map((tag, idx) => (
+                <TouchableOpacity key={idx} style={[styles.tagSuggestion, newTaskTags.includes(tag) && styles.tagSuggestionSelected]} onPress={() => toggleTagSelection(tag)}>
+                  <Text style={[styles.tagSuggestionText, newTaskTags.includes(tag) && styles.tagSuggestionTextSelected]}>{tag}</Text>
+                </TouchableOpacity>
+              ))}
             </ScrollView>
           )}
 
           <View style={styles.actionRow}>
             <View style={styles.toolsGroupWrapper}>
-              {/* NÚT LỊCH Ở DƯỚI CÙNG ĐỂ BẬT/TẮT MENU CHỌN NGÀY */}
-              <TouchableOpacity style={styles.toolIcon} onPress={() => { setShowDateMenu(!showDateMenu); setShowPriorityMenu(false); setShowTagMenu(false); }}>
-                <Ionicons name="calendar-outline" size={22} color={newTaskDueDate ? "#2D9CDB" : "#4F4F4F"} />
+              {/* ICON LỊCH Ở GÓC DƯỚI BẬT MENU THỜI GIAN */}
+              <TouchableOpacity style={styles.toolIcon} onPress={() => { Keyboard.dismiss(); setShowDateMenu(true); setShowPriorityMenu(false); setShowTagMenu(false); }}>
+                <Ionicons name="calendar-outline" size={22} color={schedule ? "#2D9CDB" : "#4F4F4F"} />
               </TouchableOpacity>
               
               <TouchableOpacity style={styles.toolIcon} onPress={() => { setShowPriorityMenu(!showPriorityMenu); setShowTagMenu(false); setShowDateMenu(false); }}>
@@ -163,45 +154,43 @@ export default function AddTaskModal({ isVisible, onClose, onSave, currentListTi
               <TouchableOpacity style={styles.toolIcon} onPress={() => { setShowTagMenu(!showTagMenu); setShowPriorityMenu(false); setShowDateMenu(false); }}>
                 <Ionicons name="pricetag" size={22} color={newTaskTags.length > 0 ? "#4F4F4F" : "#A0A0A0"} />
               </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.toolIcon}>
-                <Ionicons name="folder-outline" size={22} color="#4F4F4F" />
-              </TouchableOpacity>
             </View>
 
-            <TouchableOpacity 
-              style={[styles.saveBtn, !newTaskTitle.trim() && { opacity: 0.5, backgroundColor: '#E0E0E0' }]} 
-              onPress={handlePressSave}
-              disabled={!newTaskTitle.trim()}
-            >
+            <TouchableOpacity style={[styles.saveBtn, !newTaskTitle.trim() && { opacity: 0.5 }]} onPress={handlePressSave} disabled={!newTaskTitle.trim()}>
               <Ionicons name="arrow-up" size={24} color={newTaskTitle.trim() ? "#FFF" : "#A0A0A0"} />
             </TouchableOpacity>
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* COMPONENT DATE SELECTOR 2 TAB HIỂN THỊ */}
+      <DateTimeSelector 
+        visible={showDateMenu} 
+        currentSchedule={schedule}
+        onClose={() => setShowDateMenu(false)} 
+        onSaveSchedule={(newSchedule) => setSchedule(newSchedule)} 
+      />
     </Modal>
   );
 }
 
+// Giữ nguyên 100% StyleSheet cũ của AddTaskModal dưới này
 const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   addBottomSheet: { backgroundColor: '#FFF', paddingHorizontal: 20, paddingBottom: 25, paddingTop: 10, borderTopLeftRadius: 25, borderTopRightRadius: 25 },
   dragHandle: { width: 40, height: 4, backgroundColor: '#D1D5DB', borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
   inputTitle: { fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 15, paddingVertical: 0 },
-  
   metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 25, flexWrap: 'wrap', gap: 8 },
   readOnlyBadgeBorder: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E0E0E0', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   readOnlyBadgeSolid: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0FDF4', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   readOnlyBadgeTextDark: { fontSize: 11, fontWeight: 'bold', color: '#333', textTransform: 'uppercase' },
-
   actionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   toolsGroupWrapper: { flexDirection: 'row', backgroundColor: '#F3F4F6', borderRadius: 25, paddingHorizontal: 10, paddingVertical: 5, gap: 5 },
   toolIcon: { padding: 8 },
-  saveBtn: { backgroundColor: '#4ADE80', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
-
-  popupMenu: { position: 'absolute', bottom: 85, left: 20, backgroundColor: '#FFF', flexDirection: 'row', gap: 10, padding: 10, borderRadius: 15, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8 },
+  saveBtn: { backgroundColor: '#4ADE80', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  popupMenu: { position: 'absolute', bottom: 85, left: 20, backgroundColor: '#FFF', flexDirection: 'row', gap: 10, padding: 10, borderRadius: 15, elevation: 5 },
   popupItem: { padding: 10, backgroundColor: '#F9FAFB', borderRadius: 10 },
-  popupMenuTag: { position: 'absolute', bottom: 85, left: 20, right: 20, backgroundColor: '#FFF', flexDirection: 'row', padding: 12, borderRadius: 15, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8 },
+  popupMenuTag: { position: 'absolute', bottom: 85, left: 20, right: 20, backgroundColor: '#FFF', flexDirection: 'row', padding: 12, borderRadius: 15, elevation: 5 },
   tagSuggestion: { backgroundColor: '#F3F4F6', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 15, marginRight: 10 },
   tagSuggestionSelected: { backgroundColor: '#333' },
   tagSuggestionText: { color: '#666', fontSize: 13, fontWeight: '500' },

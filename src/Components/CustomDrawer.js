@@ -1,8 +1,3 @@
-/**
- * CUSTOM DRAWER - Sidebar chính của ứng dụng
- * Sử dụng ListManager component mới (refactored)
- */
-
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

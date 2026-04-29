@@ -1,5 +1,5 @@
 /**
- * ADD MENU MODAL - Modal hiến menu thêm (folder/list/tag)
+ * ADD MENU MODAL - Modal hiện menu thêm (folder/list/tag)
  */
 
 import React from 'react';
@@ -28,11 +28,14 @@ export default function AddMenuModal({
       />
 
       <View style={styles.container}>
+        {/* NÚT THÊM DANH SÁCH */}
         <TouchableOpacity
           style={styles.option}
           onPress={() => {
-            onCreateList();
-            onClose();
+            onClose(); // 1. Đóng Menu ngay lập tức
+            setTimeout(() => {
+              onCreateList(); // 2. Đợi 350ms để Menu đóng xong mới mở Form List (Sửa lỗi Freeze)
+            }, 350); 
           }}
         >
           <View style={[styles.iconBox, { backgroundColor: '#F0F8FF' }]}>
@@ -44,11 +47,14 @@ export default function AddMenuModal({
           </View>
         </TouchableOpacity>
 
+        {/* NÚT THÊM THƯ MỤC */}
         <TouchableOpacity
           style={styles.option}
           onPress={() => {
-            onCreateFolder();
-            onClose();
+            onClose(); 
+            setTimeout(() => {
+              onCreateFolder(); 
+            }, 350);
           }}
         >
           <View style={[styles.iconBox, { backgroundColor: '#FFF3E0' }]}>
@@ -60,11 +66,14 @@ export default function AddMenuModal({
           </View>
         </TouchableOpacity>
 
+        {/* NÚT THÊM THẺ (TAG) */}
         <TouchableOpacity
           style={styles.option}
           onPress={() => {
-            onCreateTag();
             onClose();
+            setTimeout(() => {
+              onCreateTag(); 
+            }, 350);
           }}
         >
           <View style={[styles.iconBox, { backgroundColor: '#F3F4F6' }]}>
