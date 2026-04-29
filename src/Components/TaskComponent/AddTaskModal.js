@@ -1,27 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, KeyboardAvoidingView, Platform, ScrollView, Keyboard } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimeSelector from './DateTimeSelector';
+// 👈 IMPORT KẾT NỐI API ĐỂ LẤY TAGS
+import { dbApi } from '../../services/dbAPI'; 
 
 const PRIORITY_COLORS = { 0: '#828282', 1: '#2D9CDB', 3: '#F2994A', 5: '#EB5757' };
 const PRIORITY_LABELS = { 1: 'ƯU TIÊN THẤP', 3: 'ƯU TIÊN TRUNG BÌNH', 5: 'ƯU TIÊN CAO' };
-const SUGGESTED_TAGS = ['UI/UX', 'Coding', 'Học tập', 'Cá nhân'];
 
 export default function AddTaskModal({ isVisible, onClose, onSave, currentListTitle }) {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState(0);
   const [newTaskTags, setNewTaskTags] = useState([]); 
-  const [schedule, setSchedule] = useState(null); // STATE CHỨA TOÀN BỘ DATA LỊCH
+  const [schedule, setSchedule] = useState(null); 
   
   const [showPriorityMenu, setShowPriorityMenu] = useState(false);
   const [showTagMenu, setShowTagMenu] = useState(false);
   const [showDateMenu, setShowDateMenu] = useState(false);
 
-  const toggleTagSelection = (tag) => {
-    if (newTaskTags.includes(tag)) {
-      setNewTaskTags(newTaskTags.filter(t => t !== tag));
+  // 🚀 STATE LƯU TAGS THẬT KÉO TỪ DB
+  const [availableTags, setAvailableTags] = useState([]);
+
+  // Tự động kéo Tags về khi mở Bảng thêm công việc
+  useEffect(() => {
+    if (isVisible) {
+      dbApi.getTags()
+        .then(data => setAvailableTags(data || []))
+        .catch(err => console.error("Lỗi lấy tags:", err));
+    }
+  }, [isVisible]);
+
+  const toggleTagSelection = (tagTitle) => {
+    if (newTaskTags.includes(tagTitle)) {
+      setNewTaskTags(newTaskTags.filter(t => t !== tagTitle));
     } else {
-      setNewTaskTags([...newTaskTags, tag]);
+      setNewTaskTags([...newTaskTags, tagTitle]);
     }
   };
 
@@ -34,7 +47,6 @@ export default function AddTaskModal({ isVisible, onClose, onSave, currentListTi
         title: newTaskTitle,
         priority: newTaskPriority,
         tags: newTaskTags,
-        // Nạp data thời lượng vào Object Task
         startDate: schedule?.startDate || null,
         endDate: schedule?.endDate || null,
         startTime: schedule?.startTime || null,
@@ -53,25 +65,17 @@ export default function AddTaskModal({ isVisible, onClose, onSave, currentListTi
     onClose();
   };
 
-  // 🚀 HÀM PHÂN TÍCH VÀ HIỂN THỊ BADGE LỊCH THÔNG MINH
   const renderScheduleBadge = () => {
     if (!schedule) return null;
-    
     const startD = new Date(schedule.startDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
     const endD = new Date(schedule.endDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-
     let timeStr = '';
     if (!schedule.isAllDay && schedule.startTime) {
       const sTime = new Date(schedule.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false });
       const eTime = schedule.endTime ? new Date(schedule.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
       timeStr = ` ${sTime}${eTime ? ' - ' + eTime : ''}`;
     }
-
-    if (startD === endD) {
-      return `${startD}${timeStr}`; // VD: 16/04 08:00 - 09:00
-    } else {
-      return `${startD} - ${endD}`; // VD: 16/04 - 18/04
-    }
+    return startD === endD ? `${startD}${timeStr}` : `${startD} - ${endD}`; 
   };
 
   return (
@@ -98,7 +102,6 @@ export default function AddTaskModal({ isVisible, onClose, onSave, currentListTi
               <Text style={styles.readOnlyBadgeTextDark}>{currentListTitle}</Text>
             </View>
 
-            {/* NHÃN LỊCH TRÌNH THÔNG MINH HIỂN THỊ Ở ĐÂY */}
             {schedule && (
               <TouchableOpacity style={[styles.readOnlyBadgeSolid, { backgroundColor: '#E3F2FD' }]} onPress={() => setSchedule(null)}>
                 <Ionicons name="calendar" size={14} color="#2D9CDB" style={{ marginRight: 4 }} />
@@ -113,9 +116,9 @@ export default function AddTaskModal({ isVisible, onClose, onSave, currentListTi
               </View>
             )}
 
-            {newTaskTags.map((tag, index) => (
+            {newTaskTags.map((tagTitle, index) => (
               <View key={index} style={styles.readOnlyBadgeSolid}>
-                <Text style={styles.readOnlyBadgeTextDark}>{tag}</Text>
+                <Text style={styles.readOnlyBadgeTextDark}>{tagTitle}</Text>
               </View>
             ))}
           </View>
@@ -130,19 +133,41 @@ export default function AddTaskModal({ isVisible, onClose, onSave, currentListTi
             </View>
           )}
 
+          {/* 🚀 MENU CHỌN TAG THẬT TỪ DATABASE */}
           {showTagMenu && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.popupMenuTag}>
-              {SUGGESTED_TAGS.map((tag, idx) => (
-                <TouchableOpacity key={idx} style={[styles.tagSuggestion, newTaskTags.includes(tag) && styles.tagSuggestionSelected]} onPress={() => toggleTagSelection(tag)}>
-                  <Text style={[styles.tagSuggestionText, newTaskTags.includes(tag) && styles.tagSuggestionTextSelected]}>{tag}</Text>
-                </TouchableOpacity>
-              ))}
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              style={styles.popupMenuTag}
+              contentContainerStyle={{ alignItems: 'center' }} // 👈 ĐÃ SỬA LỖI Ở ĐÂY
+            >
+              {availableTags.length === 0 ? (
+                <Text style={styles.emptyTagText}>Bạn chưa tạo Thẻ nào. Hãy tạo ở thanh Menu nhé.</Text>
+              ) : (
+                availableTags.map((tag) => (
+                  <TouchableOpacity 
+                    key={tag.id} 
+                    style={[
+                      styles.tagSuggestion, 
+                      newTaskTags.includes(tag.title) && { backgroundColor: tag.color || '#333' }, 
+                      { borderColor: tag.color, borderWidth: 1 } 
+                    ]} 
+                    onPress={() => toggleTagSelection(tag.title)}
+                  >
+                    <Text style={[
+                      styles.tagSuggestionText, 
+                      newTaskTags.includes(tag.title) ? { color: '#FFF', fontWeight: 'bold' } : { color: tag.color }
+                    ]}>
+                      {tag.title}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              )}
             </ScrollView>
           )}
 
           <View style={styles.actionRow}>
             <View style={styles.toolsGroupWrapper}>
-              {/* ICON LỊCH Ở GÓC DƯỚI BẬT MENU THỜI GIAN */}
               <TouchableOpacity style={styles.toolIcon} onPress={() => { Keyboard.dismiss(); setShowDateMenu(true); setShowPriorityMenu(false); setShowTagMenu(false); }}>
                 <Ionicons name="calendar-outline" size={22} color={schedule ? "#2D9CDB" : "#4F4F4F"} />
               </TouchableOpacity>
@@ -163,7 +188,6 @@ export default function AddTaskModal({ isVisible, onClose, onSave, currentListTi
         </View>
       </KeyboardAvoidingView>
 
-      {/* COMPONENT DATE SELECTOR 2 TAB HIỂN THỊ */}
       <DateTimeSelector 
         visible={showDateMenu} 
         currentSchedule={schedule}
@@ -174,7 +198,6 @@ export default function AddTaskModal({ isVisible, onClose, onSave, currentListTi
   );
 }
 
-// Giữ nguyên 100% StyleSheet cũ của AddTaskModal dưới này
 const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   addBottomSheet: { backgroundColor: '#FFF', paddingHorizontal: 20, paddingBottom: 25, paddingTop: 10, borderTopLeftRadius: 25, borderTopRightRadius: 25 },
@@ -190,9 +213,9 @@ const styles = StyleSheet.create({
   saveBtn: { backgroundColor: '#4ADE80', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
   popupMenu: { position: 'absolute', bottom: 85, left: 20, backgroundColor: '#FFF', flexDirection: 'row', gap: 10, padding: 10, borderRadius: 15, elevation: 5 },
   popupItem: { padding: 10, backgroundColor: '#F9FAFB', borderRadius: 10 },
+  // 👈 ĐÃ SỬA LỖI Ở ĐÂY: Xóa alignItems: 'center'
   popupMenuTag: { position: 'absolute', bottom: 85, left: 20, right: 20, backgroundColor: '#FFF', flexDirection: 'row', padding: 12, borderRadius: 15, elevation: 5 },
-  tagSuggestion: { backgroundColor: '#F3F4F6', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 15, marginRight: 10 },
-  tagSuggestionSelected: { backgroundColor: '#333' },
-  tagSuggestionText: { color: '#666', fontSize: 13, fontWeight: '500' },
-  tagSuggestionTextSelected: { color: '#FFF', fontWeight: 'bold' },
+  tagSuggestion: { backgroundColor: '#FFF', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 15, marginRight: 10 },
+  tagSuggestionText: { fontSize: 13, fontWeight: '600' },
+  emptyTagText: { color: '#999', fontStyle: 'italic', paddingHorizontal: 10 },
 });
