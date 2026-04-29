@@ -1,6 +1,6 @@
 /**
  * LIST MANAGER - Component chính quản lý hiển thị tất cả list/folder
- * Sử dụng hook useListManagement và các component con
+ * Đã nâng cấp UI phân nhóm giống TickTick
  */
 
 import React, { useState } from 'react';
@@ -21,12 +21,18 @@ import FolderForm from './FolderForm';
 import TagForm from './TagForm';
 import AddMenuModal from './AddMenuModal';
 
-const SMART_LISTS = [
+// 🚀 TÁCH BỘ LỌC THÀNH 2 MẢNG RIÊNG BIỆT
+const SMART_FILTERS = [
+  { id: 'all', icon: 'layers', title: 'Tất cả', color: '#2D9CDB' },
   { id: 'inbox', icon: 'mail', title: 'Hộp thư đến', color: '#2D9CDB' },
   { id: 'today', icon: 'calendar', title: 'Hôm nay', color: '#27AE60' },
   { id: 'next7', icon: 'calendar-outline', title: '7 ngày tới', color: '#F2994A' },
+];
+
+const STATUS_LISTS = [
   { id: 'done', icon: 'checkmark-done-circle', title: 'Đã hoàn thành', color: '#9B51E0' },
-  { id: 'trash', icon: 'trash', title: 'Thùng rác', color: '#828282' },
+  { id: 'wont_do', icon: 'close-circle', title: 'Không làm', color: '#828282' },
+  { id: 'trash', icon: 'trash', title: 'Thùng rác', color: '#EB5757' },
 ];
 
 export default function ListManager({ onSelectList, navigation }) {
@@ -185,9 +191,10 @@ export default function ListManager({ onSelectList, navigation }) {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* SMART LISTS */}
-        <Text style={styles.sectionTitle}>Mặc định</Text>
-        {SMART_LISTS.map(list => (
+        
+        {/* 🚀 BỘ LỌC THÔNG MINH */}
+        <Text style={styles.sectionTitle}>Bộ lọc thông minh</Text>
+        {SMART_FILTERS.map(list => (
           <ListItem
             key={list.id}
             icon={list.icon}
@@ -195,13 +202,29 @@ export default function ListManager({ onSelectList, navigation }) {
             count={smartLists[list.id]?.length || 0}
             color={list.color}
             isSmart
-            onPress={() => handleListPress({ id: list.id, title: list.title, tasks: smartLists[list.id] || [] })}
+            onPress={() => handleListPress({ id: list.id, title: list.title })}
           />
         ))}
 
         <View style={styles.divider} />
 
-        {/* FOLDERS & LISTS */}
+        {/* 🚀 TRẠNG THÁI */}
+        <Text style={styles.sectionTitle}>Trạng thái</Text>
+        {STATUS_LISTS.map(list => (
+          <ListItem
+            key={list.id}
+            icon={list.icon}
+            title={list.title}
+            count={smartLists[list.id]?.length || 0}
+            color={list.color}
+            isSmart
+            onPress={() => handleListPress({ id: list.id, title: list.title })}
+          />
+        ))}
+
+        <View style={styles.divider} />
+
+        {/* FOLDERS & LISTS TÙY CHỈNH */}
         <Text style={styles.sectionTitle}>Danh sách</Text>
 
         {isLoading && folders.length === 0 ? (
@@ -231,7 +254,7 @@ export default function ListManager({ onSelectList, navigation }) {
                       count={list.tasks?.length || 0}
                       color={list.color}
                       isSubItem
-                      onPress={() => handleListPress(list)}
+                      onPress={() => handleListPress({ id: list.id, title: list.title })}
                       onLongPress={() => setContextMenu({ visible: true, item: list, type: 'list' })}
                     />
                   ))}
@@ -245,7 +268,7 @@ export default function ListManager({ onSelectList, navigation }) {
                   title={item.title}
                   count={item.tasks?.length || 0}
                   color={item.color}
-                  onPress={() => handleListPress(item)}
+                  onPress={() => handleListPress({ id: item.id, title: item.title })}
                   onLongPress={() => setContextMenu({ visible: true, item, type: 'list' })}
                 />
               );
