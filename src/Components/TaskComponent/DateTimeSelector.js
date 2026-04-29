@@ -1,54 +1,195 @@
+/**
+ * DATETIME SELECTOR - Chuẩn TickTick Pro (2 Tabs, Lịch Inline, Chọn Thời Lượng)
+ */
+
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-export default function DateSelectorMenu({ visible, onSelectDate }) {
-  const [showNativePicker, setShowNativePicker] = useState(false);
+export default function DateTimeSelector({ visible, onClose, onSaveSchedule, currentSchedule }) {
+  const [activeTab, setActiveTab] = useState('date'); // 'date' | 'duration'
 
-  // Nếu không được gọi hiển thị thì ẩn đi
+  // Dữ liệu thời gian
+  const [startDate, setStartDate] = useState(currentSchedule?.startDate ? new Date(currentSchedule.startDate) : new Date());
+  const [endDate, setEndDate] = useState(currentSchedule?.endDate ? new Date(currentSchedule.endDate) : new Date());
+  const [startTime, setStartTime] = useState(currentSchedule?.startTime ? new Date(currentSchedule.startTime) : null);
+  const [endTime, setEndTime] = useState(currentSchedule?.endTime ? new Date(currentSchedule.endTime) : null);
+  const [isAllDay, setIsAllDay] = useState(currentSchedule?.isAllDay || false);
+
+  // Bộ chọn ẩn của hệ điều hành dùng cho Tab 2 (Thời lượng)
+  const [pickerConfig, setPickerConfig] = useState(null); // { mode: 'date'|'time', target: 'start'|'end' }
+
   if (!visible) return null;
 
-  // Hàm tính toán ngày nhanh
-  const setQuickDate = (daysOffset) => {
-    const date = new Date();
-    date.setDate(date.getDate() + daysOffset);
-    onSelectDate(date.toISOString());
+  /* ====================== TAB 1: CHỌN NHANH & LỊCH INLINE ====================== */
+  const setQuickDate = (days) => {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    setStartDate(d);
+    setEndDate(d); // Đồng bộ cả ngày kết thúc
   };
 
-  // Hàm hứng ngày từ bộ lịch điện thoại
-  const handleNativeDateChange = (event, selectedDate) => {
-    setShowNativePicker(false);
+  const handleInlineDateChange = (event, selectedDate) => {
     if (selectedDate) {
-      onSelectDate(selectedDate.toISOString());
+      setStartDate(selectedDate);
+      setEndDate(selectedDate);
     }
   };
 
-  return (
-    <View style={styles.container}>
-      {/* 3 Nút Chọn Nhanh */}
-      <TouchableOpacity style={styles.dateOptionBtn} onPress={() => setQuickDate(0)}>
-        <Ionicons name="today" size={20} color="#27AE60" />
-        <Text style={[styles.dateOptionText, { color: '#27AE60' }]}>Hôm nay</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity style={styles.dateOptionBtn} onPress={() => setQuickDate(1)}>
-        <Ionicons name="sunny" size={20} color="#F2994A" />
-        <Text style={[styles.dateOptionText, { color: '#F2994A' }]}>Ngày mai</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity style={styles.dateOptionBtn} onPress={() => setShowNativePicker(true)}>
-        <Ionicons name="calendar" size={20} color="#2D9CDB" />
-        <Text style={[styles.dateOptionText, { color: '#2D9CDB' }]}>Chọn ngày...</Text>
-      </TouchableOpacity>
+  /* ====================== TAB 2: THỜI LƯỢNG (NATIVE PICKER) ====================== */
+  const handleModalChange = (event, selectedValue) => {
+    if (Platform.OS === 'android') setPickerConfig(null); // Tự đóng trên Android
+    
+    if (selectedValue && event.type !== 'dismissed') {
+      if (pickerConfig.target === 'start') {
+        if (pickerConfig.mode === 'date') setStartDate(selectedValue);
+        if (pickerConfig.mode === 'time') {
+          setStartTime(selectedValue);
+          if (!endTime) { // Tự động gợi ý EndTime sau 1 tiếng
+            const autoEnd = new Date(selectedValue);
+            autoEnd.setHours(autoEnd.getHours() + 1);
+            setEndTime(autoEnd);
+          }
+        }
+      } else {
+        if (pickerConfig.mode === 'date') setEndDate(selectedValue);
+        if (pickerConfig.mode === 'time') setEndTime(selectedValue);
+      }
+    }
+    // Dành cho iOS, người dùng có thể bấm ra ngoài để đóng, ta sẽ tự tắt sau khi chọn xong
+    if (Platform.OS === 'ios') setPickerConfig(null);
+  };
 
-      {/* Lịch Native Ẩn Bên Dưới */}
-      {showNativePicker && (
+  /* ====================== LƯU LẠI VÀ RENDER FORMAT ====================== */
+  const handleSave = () => {
+    onSaveSchedule({
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      startTime: isAllDay ? null : (startTime ? startTime.toISOString() : null),
+      endTime: isAllDay ? null : (endTime ? endTime.toISOString() : null),
+      isAllDay
+    });
+    onClose();
+  };
+
+  const formatDate = (dateObj) => {
+    return dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+  const formatTime = (dateObj) => {
+    return dateObj ? dateObj.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', hour12: false }) : "--:--";
+  };
+
+  return (
+    <View style={styles.overlay}>
+      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+      
+      <View style={styles.container}>
+        {/* THANH TABS CHUYỂN ĐỔI */}
+        <View style={styles.tabsWrapper}>
+          <TouchableOpacity style={[styles.tab, activeTab === 'date' && styles.activeTab]} onPress={() => setActiveTab('date')}>
+            <Text style={[styles.tabText, activeTab === 'date' && styles.activeTabText]}>Ngày</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.tab, activeTab === 'duration' && styles.activeTab]} onPress={() => setActiveTab('duration')}>
+            <Text style={[styles.tabText, activeTab === 'duration' && styles.activeTabText]}>Thời lượng</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* NỘI DUNG TAB 1: NGÀY */}
+        {activeTab === 'date' && (
+          <View style={styles.tabContent}>
+            <View style={styles.quickActionRow}>
+              <TouchableOpacity style={styles.quickBtn} onPress={() => setQuickDate(0)}>
+                <Ionicons name="today" size={18} color="#27AE60" />
+                <Text style={[styles.quickBtnText, { color: '#27AE60' }]}>Hôm nay</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.quickBtn} onPress={() => setQuickDate(1)}>
+                <Ionicons name="sunny" size={18} color="#F2994A" />
+                <Text style={[styles.quickBtnText, { color: '#F2994A' }]}>Ngày mai</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* BỘ LỊCH INLINE - BUNG THẲNG TRÊN MÀN HÌNH KHÔNG CẦN CHẠM 2 LẦN */}
+            <View style={styles.inlineCalendarWrapper}>
+              <DateTimePicker
+                value={startDate}
+                mode="date"
+                display="inline" // 👈 Chìa khóa vàng: Hiện full lịch
+                onChange={handleInlineDateChange}
+                themeVariant="light"
+              />
+            </View>
+          </View>
+        )}
+
+        {/* NỘI DUNG TAB 2: THỜI LƯỢNG CHI TIẾT */}
+        {activeTab === 'duration' && (
+          <View style={styles.tabContent}>
+            {/* Dòng 1: Bắt đầu */}
+            <View style={styles.durationRow}>
+              <Text style={styles.durationLabel}>Bắt đầu</Text>
+              <View style={styles.durationInputs}>
+                <TouchableOpacity style={styles.inputBox} onPress={() => setPickerConfig({ mode: 'date', target: 'start' })}>
+                  <Text style={styles.inputText}>{formatDate(startDate)}</Text>
+                </TouchableOpacity>
+                {!isAllDay && (
+                  <TouchableOpacity style={styles.inputBox} onPress={() => setPickerConfig({ mode: 'time', target: 'start' })}>
+                    <Text style={styles.inputText}>{formatTime(startTime)}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            {/* Dòng 2: Kết thúc */}
+            <View style={styles.durationRow}>
+              <Text style={styles.durationLabel}>Kết thúc</Text>
+              <View style={styles.durationInputs}>
+                <TouchableOpacity style={styles.inputBox} onPress={() => setPickerConfig({ mode: 'date', target: 'end' })}>
+                  <Text style={styles.inputText}>{formatDate(endDate)}</Text>
+                </TouchableOpacity>
+                {!isAllDay && (
+                  <TouchableOpacity style={styles.inputBox} onPress={() => setPickerConfig({ mode: 'time', target: 'end' })}>
+                    <Text style={styles.inputText}>{formatTime(endTime)}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            {/* Cần gạt Cả ngày */}
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Cả ngày</Text>
+              <Switch 
+                value={isAllDay} 
+                onValueChange={setIsAllDay} 
+                trackColor={{ false: "#E0E0E0", true: "#81C784" }}
+                thumbColor={isAllDay ? "#27AE60" : "#F4F3F4"}
+              />
+            </View>
+          </View>
+        )}
+
+        {/* Nút Xóa / Xác nhận chung */}
+        <View style={styles.footer}>
+          <TouchableOpacity onPress={() => { setStartTime(null); setEndTime(null); setIsAllDay(false); }} style={styles.clearBtn}>
+            <Text style={styles.clearText}>Xóa giờ</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+            <Text style={styles.saveBtnText}>Xác nhận</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* POPUP NATIVE CHO TAB 2 (Chỉ hiện khi bấm vào ô thời lượng) */}
+      {pickerConfig && (
         <DateTimePicker
-          value={new Date()}
-          mode="date"
+          value={
+            pickerConfig.mode === 'date' 
+              ? (pickerConfig.target === 'start' ? startDate : endDate) 
+              : (pickerConfig.target === 'start' && startTime ? startTime : (pickerConfig.target === 'end' && endTime ? endTime : new Date()))
+          }
+          mode={pickerConfig.mode}
           display="default"
-          onChange={handleNativeDateChange}
+          onChange={handleModalChange}
         />
       )}
     </View>
@@ -56,32 +197,37 @@ export default function DateSelectorMenu({ visible, onSelectDate }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    position: 'absolute', 
-    bottom: 85, 
-    left: 20, 
-    backgroundColor: '#FFF', 
-    flexDirection: 'row', 
-    gap: 10, 
-    padding: 12, 
-    borderRadius: 15, 
-    elevation: 5, 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 4 }, 
-    shadowOpacity: 0.15, 
-    shadowRadius: 8
-  },
-  dateOptionBtn: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#F9FAFB', 
-    paddingHorizontal: 12, 
-    paddingVertical: 8, 
-    borderRadius: 10 
-  },
-  dateOptionText: { 
-    marginLeft: 6, 
-    fontSize: 13, 
-    fontWeight: 'bold' 
-  },
+  overlay: { ...StyleSheet.absoluteFillObject, zIndex: 9999, elevation: 9999 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)' },
+  container: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: Platform.OS === 'ios' ? 40 : 20 },
+  
+  // TABS
+  tabsWrapper: { flexDirection: 'row', backgroundColor: '#F0F0F0', borderRadius: 12, padding: 4, marginBottom: 20 },
+  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
+  activeTab: { backgroundColor: '#FFF', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 2 },
+  tabText: { fontSize: 14, fontWeight: '600', color: '#888' },
+  activeTabText: { color: '#333' },
+  tabContent: { minHeight: 250 },
+
+  // TAB 1: DATE
+  quickActionRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 10, marginBottom: 15 },
+  quickBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9FAFB', paddingVertical: 12, borderRadius: 10, borderWidth: 1, borderColor: '#F0F0F0' },
+  quickBtnText: { marginLeft: 8, fontSize: 14, fontWeight: 'bold' },
+  inlineCalendarWrapper: { backgroundColor: '#FFF', borderRadius: 15, overflow: 'hidden' },
+
+  // TAB 2: DURATION
+  durationRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  durationLabel: { fontSize: 15, fontWeight: '600', color: '#333' },
+  durationInputs: { flexDirection: 'row', gap: 10 },
+  inputBox: { backgroundColor: '#F9FAFB', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#E0E0E0', minWidth: 90, alignItems: 'center' },
+  inputText: { fontSize: 14, color: '#333', fontWeight: '500' },
+  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, borderTopWidth: 1, borderTopColor: '#F0F0F0', paddingTop: 20 },
+  switchLabel: { fontSize: 15, fontWeight: '600', color: '#333' },
+
+  // FOOTER
+  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 25 },
+  clearBtn: { padding: 10 },
+  clearText: { color: '#999', fontSize: 14, fontWeight: '600' },
+  saveBtn: { backgroundColor: '#2D9CDB', paddingHorizontal: 30, paddingVertical: 12, borderRadius: 12 },
+  saveBtnText: { color: '#FFF', fontSize: 15, fontWeight: 'bold' }
 });
