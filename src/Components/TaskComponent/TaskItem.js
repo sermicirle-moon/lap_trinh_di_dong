@@ -4,10 +4,27 @@ import { Ionicons } from '@expo/vector-icons';
 
 const PRIORITY_COLORS = { 0: '#828282', 1: '#2D9CDB', 3: '#F2994A', 5: '#EB5757' };
 
-export default function TaskItem({ task, onToggle, onPressItem }) {
-  // SỬA CHỖ NÀY: Dùng biến isCompleted từ Hook
+export default function TaskItem({ task, onToggle, onPressItem, onLongPress }) {
   const isCompleted = task.isCompleted; 
   const priorityColor = PRIORITY_COLORS[task.priority] || PRIORITY_COLORS[0];
+
+  // Logic hiển thị ngày và cảnh báo màu đỏ nếu quá hạn
+  const renderDate = () => {
+    if (!task.dueDate) return null;
+    const d = new Date(task.dueDate);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const isOverdue = d < today && !isCompleted;
+
+    return (
+      <Text style={[
+        styles.dateText, 
+        isOverdue && { color: '#EB5757', fontWeight: 'bold' }, 
+        isCompleted && { color: '#C0C0C0' }
+      ]}>
+        {d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
+      </Text>
+    );
+  };
 
   return (
     <View style={[styles.taskItem, isCompleted && styles.taskItemCompleted]}>
@@ -20,13 +37,17 @@ export default function TaskItem({ task, onToggle, onPressItem }) {
         />
       </TouchableOpacity>
 
-      {/* Thân Task */}
+      {/* Thân Task - BẤM ĐỂ XEM CHI TIẾT, GIỮ ĐỂ BẬT MENU */}
       <TouchableOpacity 
         style={styles.taskDetails} 
         activeOpacity={0.7}
         onPress={() => onPressItem(task)}
+        onLongPress={() => onLongPress(task)}
+        delayLongPress={400} // Nhấn giữ 0.4s để mở menu
       >
         <Text style={[styles.taskTitle, isCompleted && styles.taskTitleCompleted]}>
+          {/* Hiện icon Ghim nếu có */}
+          {task.isPinned && <Ionicons name="pin" size={14} color="#2D9CDB" />}{task.isPinned && " "}
           {task.title}
         </Text>
         
@@ -36,11 +57,7 @@ export default function TaskItem({ task, onToggle, onPressItem }) {
               <Text style={[styles.tagText, isCompleted && { color: '#A0A0A0' }]}>{tag}</Text>
             </View>
           ))}
-          {task.dueDate && (
-            <Text style={[styles.dateText, isCompleted && { color: '#C0C0C0' }]}>
-              {new Date(task.dueDate).toLocaleDateString('vi-VN')}
-            </Text>
-          )}
+          {renderDate()}
         </View>
       </TouchableOpacity>
     </View>
@@ -52,10 +69,10 @@ const styles = StyleSheet.create({
   taskItemCompleted: { backgroundColor: '#FAFAFA' },
   checkboxContainer: { marginRight: 15, justifyContent: 'flex-start', paddingTop: 2 },
   taskDetails: { flex: 1, justifyContent: 'center' },
-  taskTitle: { fontSize: 16, color: '#333', fontWeight: '400' },
+  taskTitle: { fontSize: 16, color: '#333', fontWeight: '500' },
   taskTitleCompleted: { textDecorationLine: 'line-through', color: '#A0A0A0' },
-  taskMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 6, flexWrap: 'wrap', gap: 5 },
-  tagBadge: { backgroundColor: '#E3F2FD', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 4 },
-  tagText: { fontSize: 11, color: '#2D9CDB', fontWeight: 'bold' },
-  dateText: { fontSize: 12, color: '#999' },
+  taskMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 8, flexWrap: 'wrap', gap: 8 },
+  tagBadge: { backgroundColor: '#F0F8FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
+  tagText: { fontSize: 11, color: '#2D9CDB', fontWeight: '600' },
+  dateText: { fontSize: 12, color: '#888' },
 });

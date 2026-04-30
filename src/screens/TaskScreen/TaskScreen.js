@@ -1,131 +1,161 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, SectionList, Modal, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, SectionList, ActivityIndicator, LayoutAnimation, UIManager, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import TaskItem from '../../Components/TaskComponent/TaskItem';
 import AddTaskModal from '../../Components/TaskComponent/AddTaskModal';
+import TaskDetailModal from '../../Components/TaskComponent/TaskDetailModal'; 
+import TaskContextMenu from '../../Components/TaskComponent/TaskContextMenu';
 
-// 👈 IMPORT BỘ NÃO VÀO
 import { useTaskManagement } from '../../hooks/useTaskManagement';
+import { dbApi } from '../../services/dbAPI';
 
-const PRIORITY_COLORS = { 0: '#828282', 1: '#2D9CDB', 3: '#F2994A', 5: '#EB5757' };
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function TaskScreen({ route, navigation }) {
-  // Nhận dữ liệu từ Drawer truyền sang
-  const listTitle = route.params?.listTitle || "Hộp thư đến";
-  const listId = route.params?.listId || "inbox"; // Bắt buộc phải có List ID
+  const listTitle = route.params?.listTitle || "Tất cả";
+  const listId = route.params?.listId || "all";
 
-  // 👈 KẾT NỐI BỘ NÃO
-  const { 
-    activeTasks, 
-    completedTasks, 
-    isLoading, 
-    createTask, 
-    toggleTaskStatus 
-  } = useTaskManagement(listId);
+  const { groupedTasks, isLoading, createTask, updateTask, toggleTaskStatus, softDeleteTask } = useTaskManagement(listId);
   
   const [isAddModalVisible, setAddModalVisible] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState({});
+  
+  // State quản lý Modal Chi tiết
   const [selectedTask, setSelectedTask] = useState(null);
+  const [isDetailModalVisible, setDetailModalVisible] = useState(false);
 
-  // Gộp data cho SectionList
-  const sections = [
-    { title: '', data: activeTasks },
-    ...(completedTasks.length > 0 ? [{ title: 'Đã hoàn thành', data: completedTasks }] : [])
-  ];
+  // 🚀 State quản lý Context Menu (Menu Nhấn Giữ)
+  const [selectedTaskForMenu, setSelectedTaskForMenu] = useState(null);
+  const [isMenuVisible, setMenuVisible] = useState(false);
+  const [availableTags, setAvailableTags] = useState([]);
+  const [availableLists, setAvailableLists] = useState([]);
 
-  // Hàm xử lý lưu
-  const handleAddNewTask = async (taskData) => {
-    await createTask(taskData); // Gửi thẳng API
-    setAddModalVisible(false); // Đóng bảng
+  // Kéo danh sách Tags và Lists từ DB để nhúng vào Context Menu
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [tags, folders] = await Promise.all([dbApi.getTags(), dbApi.getFolders()]);
+        setAvailableTags(tags || []);
+        
+        const flatLists = [{ id: 'inbox', title: 'Hộp thư đến', icon: 'mail', color: '#2D9CDB' }];
+        (folders || []).forEach(f => {
+          if (f.isFolder) {
+            (f.lists || []).forEach(l => flatLists.push({ ...l, folderTitle: f.title }));
+          } else {
+            flatLists.push(f);
+          }
+        });
+        setAvailableLists(flatLists);
+      } catch (error) {
+        console.error("Lỗi tải data cho menu:", error);
+      }
+    };
+    loadData();
+  }, []);
+
+  const toggleSection = (sectionKey) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setCollapsedSections(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
   };
+
+  const handleAddNewTask = async (taskData) => {
+    await createTask(taskData);
+    setAddModalVisible(false);
+  };
+
+  const handlePressTaskItem = (task) => {
+    setSelectedTask(task);
+    setDetailModalVisible(true);
+  };
+
+  const handleLongPressTaskItem = (task) => {
+    setSelectedTaskForMenu(task);
+    setMenuVisible(true);
+  };
+
+  const canCreateTask = !['done', 'wont_do', 'trash'].includes(listId);
+
+  const renderSectionHeader = ({ section }) => (
+    <TouchableOpacity style={styles.sectionHeader} activeOpacity={0.7} onPress={() => toggleSection(section.key)}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Ionicons name={collapsedSections[section.key] ? "chevron-forward" : "chevron-down"} size={18} color={section.color} style={{ marginRight: 8 }} />
+        <Text style={[styles.sectionTitle, { color: section.color }]}>{section.title}</Text>
+      </View>
+      <Text style={styles.sectionCount}>{section.data.length}</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* HEADER */}
       <View style={styles.header}>
-        {/* Nút Hamburger mở Sidebar */}
-        <TouchableOpacity
-          onPress={() => {
-            const parentNav = navigation.getParent ? navigation.getParent() : null;
-            if (parentNav && parentNav.openDrawer) parentNav.openDrawer();
-          }}
-          style={styles.iconBtn}
-        >
-
-        
-
+        <TouchableOpacity onPress={() => navigation.getParent()?.openDrawer()} style={styles.iconBtn}>
           <Ionicons name="menu-outline" size={28} color="#333" />
         </TouchableOpacity>
-        
         <Text style={styles.headerTitle}>{listTitle}</Text>
-        
         <TouchableOpacity style={styles.iconBtn}>
           <Ionicons name="ellipsis-vertical" size={24} color="#333" />
         </TouchableOpacity>
       </View>
 
-      {/* DANH SÁCH TASK */}
       {isLoading ? (
-        <View style={styles.emptyContainer}>
-          <ActivityIndicator size="large" color="#2D9CDB" />
-        </View>
-      ) : activeTasks.length === 0 && completedTasks.length === 0 ? (
+        <View style={styles.emptyContainer}><ActivityIndicator size="large" color="#2D9CDB" /></View>
+      ) : groupedTasks.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="clipboard-outline" size={60} color="#D1D5DB" />
           <Text style={styles.emptyText}>Chưa có công việc nào.</Text>
         </View>
       ) : (
         <SectionList
-          sections={sections}
+          sections={groupedTasks}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TaskItem 
-              task={item} 
-              onToggle={toggleTaskStatus} // Gọi hàm toggle từ Hook
-              onPressItem={(task) => setSelectedTask(task)} 
-            />
-          )}
-          renderSectionHeader={({ section: { title } }) => (
-            title ? <Text style={styles.sectionHeader}>{title}</Text> : null
-          )}
-          contentContainerStyle={{ paddingBottom: 80 }}
+          renderItem={({ item, section }) => {
+            if (collapsedSections[section.key]) return null;
+            return (
+              <TaskItem 
+                task={item} 
+                onToggle={toggleTaskStatus} 
+                onPressItem={() => handlePressTaskItem(item)} 
+                onLongPress={() => handleLongPressTaskItem(item)}
+              />
+            );
+          }}
+          renderSectionHeader={renderSectionHeader}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          stickySectionHeadersEnabled={false}
         />
       )}
 
-      {/* NÚT THÊM (+) */}
-      <TouchableOpacity style={styles.fab} activeOpacity={0.8} onPress={() => setAddModalVisible(true)}>
-        <Ionicons name="add" size={32} color="#FFF" />
-      </TouchableOpacity>
+      {canCreateTask && (
+        <TouchableOpacity style={styles.fab} activeOpacity={0.8} onPress={() => setAddModalVisible(true)}>
+          <Ionicons name="add" size={32} color="#FFF" />
+        </TouchableOpacity>
+      )}
 
-      {/* FORM THÊM TASK */}
+      {/* CÁC MODALS ĐIỀU KHIỂN */}
       <AddTaskModal 
-        isVisible={isAddModalVisible}
-        currentListTitle={listTitle}
-        onClose={() => setAddModalVisible(false)}
-        onSave={handleAddNewTask} // Đường ống lưu
+        isVisible={isAddModalVisible} currentListTitle={listTitle}
+        onClose={() => setAddModalVisible(false)} onSave={handleAddNewTask} 
       />
 
-      {/* MODAL CHI TIẾT */}
-      <Modal visible={selectedTask !== null} animationType="fade" transparent>
-        <View style={styles.detailModalOverlay}>
-          <View style={styles.detailBox}>
-            <View style={styles.detailHeader}>
-              <Text style={styles.detailHeaderTitle}>Chi tiết công việc</Text>
-              <TouchableOpacity onPress={() => setSelectedTask(null)}><Ionicons name="close" size={24} color="#333" /></TouchableOpacity>
-            </View>
-            {selectedTask && (
-              <View style={{ marginTop: 10 }}>
-                <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{selectedTask.title}</Text>
-                <Text style={{ marginTop: 10, color: '#666' }}>{selectedTask.content || 'Không có mô tả.'}</Text>
-                <View style={{ flexDirection: 'row', marginTop: 20, alignItems: 'center' }}>
-                  <Ionicons name="flag" size={18} color={PRIORITY_COLORS[selectedTask.priority]} />
-                  <Text style={{ marginLeft: 5, color: '#666' }}>Mức độ: {selectedTask.priority}</Text>
-                </View>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
+      <TaskDetailModal
+        visible={isDetailModalVisible}
+        task={selectedTask}
+        onClose={() => setDetailModalVisible(false)}
+        onUpdateTask={updateTask}
+      />
+
+      <TaskContextMenu
+        visible={isMenuVisible}
+        task={selectedTaskForMenu}
+        availableTags={availableTags}
+        availableLists={availableLists}
+        onClose={() => setMenuVisible(false)}
+        onUpdate={updateTask}
+        onDelete={softDeleteTask}
+      />
 
     </SafeAreaView>
   );
@@ -138,10 +168,8 @@ const styles = StyleSheet.create({
   iconBtn: { padding: 5 },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { marginTop: 10, fontSize: 16, color: '#999' },
-  sectionHeader: { backgroundColor: '#F9FAFB', paddingHorizontal: 15, paddingVertical: 8, fontSize: 13, fontWeight: 'bold', color: '#6B7280', marginTop: 10 },
-  fab: { position: 'absolute', right: 20, bottom: 20, backgroundColor: '#5C7CFA', width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', elevation: 5 },
-  detailModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  detailBox: { width: '85%', backgroundColor: '#FFF', borderRadius: 12, padding: 20 },
-  detailHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#F0F0F0', paddingBottom: 10 },
-  detailHeaderTitle: { fontSize: 16, fontWeight: 'bold', color: '#888' }
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 12, backgroundColor: '#FAFBFF', borderBottomWidth: 1, borderBottomColor: '#F0F0F0', marginTop: 10 },
+  sectionTitle: { fontSize: 14, fontWeight: 'bold' },
+  sectionCount: { fontSize: 13, color: '#999', fontWeight: 'bold' },
+  fab: { position: 'absolute', right: 20, bottom: 20, backgroundColor: '#2D9CDB', width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.2, shadowRadius: 5 },
 });
