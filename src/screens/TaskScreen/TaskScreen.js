@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, SectionList, ActivityIndicator, LayoutAnimation, UIManager, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, SectionList, ActivityIndicator, LayoutAnimation, UIManager, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import TaskItem from '../../Components/TaskComponent/TaskItem';
@@ -18,22 +18,20 @@ export default function TaskScreen({ route, navigation }) {
   const listTitle = route.params?.listTitle || "Tất cả";
   const listId = route.params?.listId || "all";
 
-  const { groupedTasks, isLoading, createTask, updateTask, toggleTaskStatus, softDeleteTask } = useTaskManagement(listId);
+  const { groupedTasks, isLoading, createTask, updateTask, toggleTaskStatus, softDeleteTask, hardDeleteTask, emptyTrash } = useTaskManagement(listId);
   
   const [isAddModalVisible, setAddModalVisible] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
-  
-  // State quản lý Modal Chi tiết
   const [selectedTask, setSelectedTask] = useState(null);
   const [isDetailModalVisible, setDetailModalVisible] = useState(false);
+  
+  const [parentTaskForSubtask, setParentTaskForSubtask] = useState(null);
 
-  // 🚀 State quản lý Context Menu (Menu Nhấn Giữ)
   const [selectedTaskForMenu, setSelectedTaskForMenu] = useState(null);
   const [isMenuVisible, setMenuVisible] = useState(false);
   const [availableTags, setAvailableTags] = useState([]);
   const [availableLists, setAvailableLists] = useState([]);
 
-  // Kéo danh sách Tags và Lists từ DB để nhúng vào Context Menu
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -42,16 +40,11 @@ export default function TaskScreen({ route, navigation }) {
         
         const flatLists = [{ id: 'inbox', title: 'Hộp thư đến', icon: 'mail', color: '#2D9CDB' }];
         (folders || []).forEach(f => {
-          if (f.isFolder) {
-            (f.lists || []).forEach(l => flatLists.push({ ...l, folderTitle: f.title }));
-          } else {
-            flatLists.push(f);
-          }
+          if (f.isFolder) (f.lists || []).forEach(l => flatLists.push({ ...l, folderTitle: f.title }));
+          else flatLists.push(f);
         });
         setAvailableLists(flatLists);
-      } catch (error) {
-        console.error("Lỗi tải data cho menu:", error);
-      }
+      } catch (error) { console.error("Lỗi:", error); }
     };
     loadData();
   }, []);
@@ -64,29 +57,16 @@ export default function TaskScreen({ route, navigation }) {
   const handleAddNewTask = async (taskData) => {
     await createTask(taskData);
     setAddModalVisible(false);
+    setParentTaskForSubtask(null); 
   };
 
-  const handlePressTaskItem = (task) => {
-    setSelectedTask(task);
-    setDetailModalVisible(true);
-  };
-
-  const handleLongPressTaskItem = (task) => {
-    setSelectedTaskForMenu(task);
-    setMenuVisible(true);
+  const handleEmptyTrash = () => {
+    Alert.alert("Dọn sạch thùng rác?", "Toàn bộ công việc trong thùng rác sẽ bị xóa vĩnh viễn và không thể khôi phục.",
+      [{ text: "Hủy", style: "cancel" }, { text: "Xóa tất cả", style: "destructive", onPress: emptyTrash }]
+    );
   };
 
   const canCreateTask = !['done', 'wont_do', 'trash'].includes(listId);
-
-  const renderSectionHeader = ({ section }) => (
-    <TouchableOpacity style={styles.sectionHeader} activeOpacity={0.7} onPress={() => toggleSection(section.key)}>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Ionicons name={collapsedSections[section.key] ? "chevron-forward" : "chevron-down"} size={18} color={section.color} style={{ marginRight: 8 }} />
-        <Text style={[styles.sectionTitle, { color: section.color }]}>{section.title}</Text>
-      </View>
-      <Text style={styles.sectionCount}>{section.data.length}</Text>
-    </TouchableOpacity>
-  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -95,17 +75,24 @@ export default function TaskScreen({ route, navigation }) {
           <Ionicons name="menu-outline" size={28} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{listTitle}</Text>
-        <TouchableOpacity style={styles.iconBtn}>
-          <Ionicons name="ellipsis-vertical" size={24} color="#333" />
-        </TouchableOpacity>
+        
+        {listId === 'trash' ? (
+          <TouchableOpacity style={styles.iconBtn} onPress={handleEmptyTrash}>
+            <Ionicons name="trash-bin-outline" size={26} color="#EB5757" />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.iconBtn}>
+            <Ionicons name="ellipsis-vertical" size={24} color="#333" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {isLoading ? (
         <View style={styles.emptyContainer}><ActivityIndicator size="large" color="#2D9CDB" /></View>
       ) : groupedTasks.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="clipboard-outline" size={60} color="#D1D5DB" />
-          <Text style={styles.emptyText}>Chưa có công việc nào.</Text>
+          <Ionicons name={listId === 'trash' ? "trash-outline" : "clipboard-outline"} size={60} color="#D1D5DB" />
+          <Text style={styles.emptyText}>{listId === 'trash' ? 'Thùng rác trống.' : 'Chưa có công việc nào.'}</Text>
         </View>
       ) : (
         <SectionList
@@ -117,46 +104,48 @@ export default function TaskScreen({ route, navigation }) {
               <TaskItem 
                 task={item} 
                 onToggle={toggleTaskStatus} 
-                onPressItem={() => handlePressTaskItem(item)} 
-                onLongPress={() => handleLongPressTaskItem(item)}
+                // 🚀 ĐÃ SỬA LỖI Ở 2 DÒNG DƯỚI ĐÂY: Dùng biến (t) để hứng chính xác Task đang được bấm
+                onPressItem={(t) => { setSelectedTask(t); setDetailModalVisible(true); }} 
+                onLongPress={(t) => { setSelectedTaskForMenu(t); setMenuVisible(true); }}
               />
             );
           }}
-          renderSectionHeader={renderSectionHeader}
+          renderSectionHeader={({ section }) => (
+            <TouchableOpacity style={styles.sectionHeader} activeOpacity={0.7} onPress={() => toggleSection(section.key)}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name={collapsedSections[section.key] ? "chevron-forward" : "chevron-down"} size={18} color={section.color} style={{ marginRight: 8 }} />
+                <Text style={[styles.sectionTitle, { color: section.color }]}>{section.title}</Text>
+              </View>
+              <Text style={styles.sectionCount}>{section.data.length}</Text>
+            </TouchableOpacity>
+          )}
           contentContainerStyle={{ paddingBottom: 100 }}
           stickySectionHeadersEnabled={false}
         />
       )}
 
       {canCreateTask && (
-        <TouchableOpacity style={styles.fab} activeOpacity={0.8} onPress={() => setAddModalVisible(true)}>
+        <TouchableOpacity style={styles.fab} activeOpacity={0.8} onPress={() => { setParentTaskForSubtask(null); setAddModalVisible(true); }}>
           <Ionicons name="add" size={32} color="#FFF" />
         </TouchableOpacity>
       )}
 
-      {/* CÁC MODALS ĐIỀU KHIỂN */}
       <AddTaskModal 
-        isVisible={isAddModalVisible} currentListTitle={listTitle}
-        onClose={() => setAddModalVisible(false)} onSave={handleAddNewTask} 
+        isVisible={isAddModalVisible} 
+        currentListTitle={listTitle} 
+        parentTaskForSubtask={parentTaskForSubtask} 
+        onClose={() => { setAddModalVisible(false); setParentTaskForSubtask(null); }} 
+        onSave={handleAddNewTask} 
       />
-
-      <TaskDetailModal
-        visible={isDetailModalVisible}
-        task={selectedTask}
-        onClose={() => setDetailModalVisible(false)}
-        onUpdateTask={updateTask}
-      />
-
+      
+      <TaskDetailModal visible={isDetailModalVisible} task={selectedTask} onClose={() => setDetailModalVisible(false)} onUpdateTask={updateTask} />
+      
       <TaskContextMenu
-        visible={isMenuVisible}
-        task={selectedTaskForMenu}
-        availableTags={availableTags}
-        availableLists={availableLists}
-        onClose={() => setMenuVisible(false)}
-        onUpdate={updateTask}
-        onDelete={softDeleteTask}
+        visible={isMenuVisible} task={selectedTaskForMenu} availableTags={availableTags} availableLists={availableLists}
+        onClose={() => setMenuVisible(false)} onUpdate={updateTask} 
+        onSoftDelete={softDeleteTask} onHardDelete={hardDeleteTask} 
+        onAddSubtask={(task) => { setParentTaskForSubtask(task); setAddModalVisible(true); }} 
       />
-
     </SafeAreaView>
   );
 }
