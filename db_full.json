@@ -23,6 +23,18 @@
       "email": "admin2@gmail.com",
       "password": "$2b$08$1SQ85akuGcyu2hhD2Ejkle6y0ky33/Rfwu.F023L2MDvL27LRi74W",
       "name": "admin12"
+    },
+    {
+      "id": 1776415367307,
+      "email": "user12@gmail.com",
+      "password": "$2b$08$LnNB4rDKWJx36Suy1oFniuqjOe4tBMTonVMCEoAuK3pwqV7to46py",
+      "name": "User1"
+    },
+    {
+      "id": 1776415589824,
+      "email": "user123@gmail.com",
+      "password": "$2b$08$JQKLOO06ozDo.sUjjpQXouK/IbGF/CJS41UofpPIhkQBzGSY4vgHq",
+      "name": "User1"
     }
   ],
   "folders": [
@@ -93,9 +105,84 @@
       "updatedAt": "2026-04-15T08:32:00.043Z",
       "order": 1776241911691,
       "userId": 1776241029466
+    },
+    {
+      "id": "list_1776415395436",
+      "title": "Test",
+      "isFolder": false,
+      "icon": "document",
+      "color": "#2D9CDB",
+      "tasks": [],
+      "createdAt": "2026-04-17T08:43:15.436Z",
+      "updatedAt": "2026-04-17T08:43:15.436Z",
+      "order": 1776415395436,
+      "userId": 1776415367307
+    },
+    {
+      "id": "folder_1776415419923",
+      "title": "Test folder",
+      "isFolder": true,
+      "icon": "folder-outline",
+      "color": "#828282",
+      "lists": [],
+      "createdAt": "2026-04-17T08:43:39.924Z",
+      "updatedAt": "2026-04-17T08:43:39.924Z",
+      "order": 1776415419924,
+      "userId": 1776415367307
+    },
+    {
+      "id": "list_1776415638935",
+      "title": "Test 3",
+      "isFolder": false,
+      "icon": "list-outline",
+      "color": "#2D9CDB",
+      "tasks": [],
+      "createdAt": "2026-04-17T08:47:18.935Z",
+      "updatedAt": "2026-04-17T08:47:18.935Z",
+      "order": 1776415638935,
+      "userId": 1776415589824
+    },
+    {
+      "id": "folder_1776415652457",
+      "title": "Test 4",
+      "isFolder": true,
+      "icon": "folder-open",
+      "color": "#828282",
+      "lists": [
+        {
+          "id": "list_1776415660208",
+          "title": "Test 5",
+          "icon": "list-outline",
+          "color": "#2D9CDB",
+          "tasks": [],
+          "createdAt": "2026-04-17T08:47:40.208Z",
+          "updatedAt": "2026-04-17T08:47:40.208Z"
+        }
+      ],
+      "createdAt": "2026-04-17T08:47:32.457Z",
+      "updatedAt": "2026-04-17T08:47:40.208Z",
+      "order": 1776415652457,
+      "userId": 1776415589824
     }
   ],
-  "tags": [],
+  "tags": [
+    {
+      "id": "tag_1776415404668",
+      "title": "Test2",
+      "color": "#828282",
+      "createdAt": "2026-04-17T08:43:24.668Z",
+      "updatedAt": "2026-04-17T08:43:24.668Z",
+      "userId": 1776415367307
+    },
+    {
+      "id": "tag_1776415688402",
+      "title": "Test tag",
+      "color": "#828282",
+      "createdAt": "2026-04-17T08:48:08.402Z",
+      "updatedAt": "2026-04-17T08:48:08.402Z",
+      "userId": 1776415589824
+    }
+  ],
   "tasks": [
     {
       "id": "task_1776241395303",
@@ -258,6 +345,54 @@
       "dueDate": null,
       "createdAt": "2026-04-15T08:34:28.885Z",
       "updatedAt": "2026-04-15T08:34:30.504Z"
+    },
+    {
+      "id": "task_1776415607747",
+      "listId": "next7",
+      "title": "Test 1",
+      "isCompleted": true,
+      "priority": 0,
+      "tags": [],
+      "dueDate": null,
+      "createdAt": "2026-04-17T08:46:47.747Z",
+      "updatedAt": "2026-04-17T08:47:04.858Z",
+      "userId": 1776415589824
+    },
+    {
+      "id": "task_1776415617611",
+      "listId": "today",
+      "title": "Test 2",
+      "isCompleted": true,
+      "priority": 0,
+      "tags": [],
+      "dueDate": null,
+      "createdAt": "2026-04-17T08:46:57.611Z",
+      "updatedAt": "2026-04-17T08:47:08.060Z",
+      "userId": 1776415589824
+    },
+    {
+      "id": "task_1776415670205",
+      "listId": "list_1776415638935",
+      "title": "Test trong",
+      "isCompleted": false,
+      "priority": 0,
+      "tags": [],
+      "dueDate": null,
+      "createdAt": "2026-04-17T08:47:50.205Z",
+      "updatedAt": "2026-04-17T08:47:50.205Z",
+      "userId": 1776415589824
+    },
+    {
+      "id": "task_1776415679148",
+      "listId": "list_1776415660208",
+      "title": "Test 1",
+      "isCompleted": false,
+      "priority": 0,
+      "tags": [],
+      "dueDate": null,
+      "createdAt": "2026-04-17T08:47:59.148Z",
+      "updatedAt": "2026-04-17T08:47:59.148Z",
+      "userId": 1776415589824
     }
   ]
 }

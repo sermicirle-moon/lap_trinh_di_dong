@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const API_BASE_URL = 'http://172.20.10.2:3000'; // thay bằng IP máy tính nếu test trên điện thoại
+export const API_BASE_URL = 'http://0.0.0.0:3000'; // thay bằng IP máy tính nếu test trên điện thoại
 
 export const getToken = async () => {
   return await AsyncStorage.getItem('userToken');
