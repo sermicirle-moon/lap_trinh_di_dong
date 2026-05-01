@@ -11,6 +11,8 @@ import StatsScreen from '../Screens/StatsScreen/StatsScreen';
 import TaskScreen from '../Screens/TaskScreen/TaskScreen';
 import HabitsScreen from '../Screens/HabitsScreen/HabitsScreen';
 import SettingsScreen from '../Screens/SettingsScreen/SettingsScreen';
+// 🚀 IMPORT CALENDAR SCREEN VÀO ĐÂY
+import CalendarScreen from '../Screens/CalendarScreen/CalendarScreen'; 
 import CustomDrawer from '../Components/CustomDrawer';
 
 const Tab = createBottomTabNavigator();
@@ -54,10 +56,14 @@ function BottomTabs() {
         headerShown: false,
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
+          // 🚀 THÊM ICON CHO CALENDAR VÀ CẬP NHẬT CÁC TAB
           if (route.name === 'Task') iconName = focused ? 'checkmark-done' : 'checkmark-done-outline';
+          else if (route.name === 'Calendar') iconName = focused ? 'calendar' : 'calendar-outline'; // Tab mới
           else if (route.name === 'Focus') iconName = focused ? 'timer' : 'timer-outline';
+          // Tạm thời đưa Stats vào màn hình More để nhường chỗ cho Calendar nếu thanh tab bị chật (hoặc cứ để 5 tab tùy bạn)
           else if (route.name === 'Stats') iconName = focused ? 'stats-chart' : 'stats-chart-outline';
           else if (route.name === 'More') iconName = focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal-outline';
+          
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#2D9CDB',
@@ -66,6 +72,8 @@ function BottomTabs() {
       })}
     >
       <Tab.Screen name="Task" component={TaskScreen} options={{ title: 'Công việc' }} />
+      {/* 🚀 THÊM TAB CALENDAR VÀO ĐÂY (Nên để thứ 2 hoặc thứ 3) */}
+      <Tab.Screen name="Calendar" component={CalendarScreen} options={{ title: 'Lịch' }} />
       <Tab.Screen name="Focus" component={FocusScreen} options={{ title: 'Tập trung' }} />
       <Tab.Screen name="Stats" component={StatsScreen} options={{ title: 'Thống kê' }} />
       <Tab.Screen name="More" component={MoreStack} options={{ title: 'Thêm' }} />
