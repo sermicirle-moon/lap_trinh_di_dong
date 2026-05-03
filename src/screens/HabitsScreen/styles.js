@@ -152,5 +152,125 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.4, 
     shadowRadius: 10, 
     elevation: 5 
-  }
+  },
+  // Thêm vào cuối styles object
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '85%',
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 20,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#DDD',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
+    fontSize: 16,
+  },
+  modalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  modalLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 5,
+    color: '#333',
+  },
+  repeatOptions: {
+    flexDirection: 'row',
+    marginLeft: 10,
+  },
+  repeatOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#F0F0F0',
+    marginHorizontal: 5,
+  },
+  repeatOptionActive: {
+    backgroundColor: '#2D9CDB',
+  },
+  repeatOptionText: {
+    fontSize: 13,
+    color: '#333',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: '#F0F0F0',
+  },
+  cancelButtonText: {
+    color: '#666',
+  },
+  saveButton: {
+    backgroundColor: '#2D9CDB',
+  },
+  saveButtonText: {
+    color: '#FFF',
+    fontWeight: 'bold',
+  },
+  cardSubtitle: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
+  },
+  // Context menu styles
+contextMenu: {
+  position: 'absolute',
+  bottom: 30,
+  left: 20,
+  right: 20,
+  backgroundColor: '#FFF',
+  borderRadius: 12,
+  overflow: 'hidden',
+  elevation: 5,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.15,
+  shadowRadius: 8,
+},
+contextMenuItem: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  paddingVertical: 14,
+  paddingHorizontal: 16,
+},
+contextMenuText: {
+  fontSize: 16,
+  marginLeft: 12,
+  color: '#333',
+},
+deleteItem: {
+  // no extra style needed, text/icon color red is set inline
+},
+contextDivider: {
+  height: 1,
+  backgroundColor: '#F0F0F0',
+},
 });

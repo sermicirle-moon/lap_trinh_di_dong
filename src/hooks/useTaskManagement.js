@@ -36,7 +36,7 @@ export const useTaskManagement = (listId) => {
         contextTasks = allData.filter(t => t.isWontDo && !t.isTrashed);
       } else {
         // Các List đang Active (Hộp thư đến, Hôm nay, Tất cả...)
-        let activeData = allData.filter(t => !t.isTrashed && !t.isCompleted && !t.isWontDo);
+        let activeData = allData.filter(t => !t.isTrashed && !t.isCompleted && !t.isWontDo && t.listId !== 'matrix');
         const today = new Date(); today.setHours(0, 0, 0, 0);
         const next7 = new Date(today); next7.setDate(next7.getDate() + 7);
 

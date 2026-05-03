@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView,TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ListManager from './ListManagement/ListManager';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function CustomDrawer({ navigation }) {
   const insets = useSafeAreaInsets();
@@ -15,6 +16,10 @@ export default function CustomDrawer({ navigation }) {
         tasks: list.tasks || [],
       },
     });
+    navigation.closeDrawer();
+  };
+  const navigateTo = (screen) => {
+    navigation.navigate(screen);
     navigation.closeDrawer();
   };
 
@@ -31,29 +36,19 @@ export default function CustomDrawer({ navigation }) {
         onSelectList={handleSelectList}
         navigation={navigation}
       />
+      
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF',
-  },
+  container: { flex: 1, backgroundColor: '#FFF' },
   header: {
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },
-  appTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#333',
-  },
-  appSubtitle: {
-    fontSize: 13,
-    color: '#999',
-    marginTop: 4,
-  },
+  appTitle: { fontSize: 22, fontWeight: '700', color: '#333' },
+  appSubtitle: { fontSize: 13, color: '#999', marginTop: 4 },
 });
