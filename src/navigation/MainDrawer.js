@@ -29,16 +29,9 @@ function BottomTabs() {
           if (route.name === 'Task') iconName = focused ? 'checkmark-done' : 'checkmark-done-outline';
           else if (route.name === 'Calendar') iconName = focused ? 'calendar' : 'calendar-outline'; // Tab mới
           else if (route.name === 'Focus') iconName = focused ? 'timer' : 'timer-outline';
-<<<<<<< HEAD
           else if (route.name === 'Habits') iconName = focused ? 'leaf' : 'leaf-outline';
           else if (route.name === 'Matrix') iconName = focused ? 'grid' : 'grid-outline';
           else if (route.name === 'Settings') iconName = focused ? 'settings' : 'settings-outline';
-=======
-          // Tạm thời đưa Stats vào màn hình More để nhường chỗ cho Calendar nếu thanh tab bị chật (hoặc cứ để 5 tab tùy bạn)
-          else if (route.name === 'Stats') iconName = focused ? 'stats-chart' : 'stats-chart-outline';
-          else if (route.name === 'More') iconName = focused ? 'ellipsis-horizontal' : 'ellipsis-horizontal-outline';
-          
->>>>>>> 6506c225e284320432ba1a01f63e03e96e9e2a5d
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#2D9CDB',
