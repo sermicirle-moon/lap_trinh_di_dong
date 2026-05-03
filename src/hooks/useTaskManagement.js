@@ -35,8 +35,8 @@ export const useTaskManagement = (listId) => {
       } else if (listId === 'wont_do') {
         contextTasks = allData.filter(t => t.isWontDo && !t.isTrashed);
       } else {
-        // 🚀 Ở CÁC MÀN LIST KHÁC: CHẶN ĐỨNG SỰ KIỆN (!t.isEvent)
-        let activeData = allData.filter(t => !t.isTrashed && !t.isCompleted && !t.isWontDo && !t.isEvent);
+        // Các List đang Active (Hộp thư đến, Hôm nay, Tất cả...)
+        let activeData = allData.filter(t => !t.isTrashed && !t.isCompleted && !t.isWontDo && t.listId !== 'matrix'&& !t.isEvent);
         const today = new Date(); today.setHours(0, 0, 0, 0);
         const next7 = new Date(today); next7.setDate(next7.getDate() + 7);
 

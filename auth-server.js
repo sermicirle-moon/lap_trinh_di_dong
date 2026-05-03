@@ -4,12 +4,11 @@ const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
 const server = jsonServer.create()
 const router = jsonServer.router('db_full.json')
-const middlewares = jsonServer.defaults()
+const middlewares = jsonServer.defaults({ bodyParser: { limit: '50mb' } });
 
 const SECRET_KEY = 'your-secret-key-change-in-production'
 
 server.use(middlewares)
-server.use(jsonServer.bodyParser)
 server.use(express.json())
 // Đăng ký
 server.post('/register', (req, res) => {
@@ -68,7 +67,13 @@ router.render = (req, res) => {
   let data = res.locals.data
   if (userId && req.method === 'GET') {
     if (Array.isArray(data)) {
-      data = data.filter(item => item.userId === userId)
+      // Nếu đang request vào /users, thì so sánh với 'id'
+      if (req.path === '/users') {
+        data = data.filter(item => item.id === userId)
+      } else {
+        // Các resource khác (tasks, habits...) thì so sánh với 'userId'
+        data = data.filter(item => item.userId === userId)
+      }
     } else if (data && data.userId !== undefined && data.userId !== userId) {
       data = {}
     }

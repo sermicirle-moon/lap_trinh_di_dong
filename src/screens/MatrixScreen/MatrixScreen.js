@@ -1,54 +1,137 @@
 import React, { useState } from 'react';
-import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Alert, Platform } from 'react-native';
+import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { dbApi } from '../../services/dbAPI';
 import { styles } from './styles';
+import TaskItem from '../../Components/TaskComponent/TaskItem';
+import TaskContextMenu from '../../Components/TaskComponent/TaskContextMenu';
 
 export default function MatrixScreen({ navigation }) {
-  // 1. Quản lý trạng thái (State)
-  const [inputText, setInputText] = useState(''); // Lưu chữ người dùng đang gõ
-  const [tasks, setTasks] = useState([
-    { id: '1', text: 'Sửa lỗi giao diện', type: 'Do First', completed: false },
-    { id: '2', text: 'Học React Native', type: 'Schedule', completed: false },
-    { id: '3', text: 'Kiểm tra email', type: 'Delegate', completed: true },
-  ]);
+  const [inputText, setInputText] = useState('');
+  const [tasks, setTasks] = useState([]);
+  const [selectedTaskForMenu, setSelectedTaskForMenu] = useState(null);
+  const [isMenuVisible, setMenuVisible] = useState(false);
+  const [availableTags, setAvailableTags] = useState([]);
+  const [availableLists, setAvailableLists] = useState([]);
 
-  // 2. Hàm Thêm công việc
-  const handleAddTask = (type) => {
-    if (inputText.trim() === '') {
-      const msg = "Vui lòng nhập nội dung công việc trước khi thêm!";
-      Platform.OS === 'web' ? window.alert(msg) : Alert.alert("Lỗi", msg);
+  const loadTasks = async () => {
+    try {
+      const data = await dbApi.getTasks();
+      setTasks(data);
+    } catch (error) {
+      console.error('Lỗi tải tasks:', error);
+      Alert.alert('Lỗi', 'Không thể tải công việc');
+    }
+  };
+
+  const loadMetadata = async () => {
+    try {
+      const [tags, folders] = await Promise.all([dbApi.getTags(), dbApi.getFolders()]);
+      setAvailableTags(tags || []);
+      const flatLists = [{ id: 'inbox', title: 'Hộp thư đến', icon: 'mail', color: '#2D9CDB' }];
+      (folders || []).forEach(f => {
+        if (f.isFolder) (f.lists || []).forEach(l => flatLists.push({ ...l, folderTitle: f.title }));
+        else flatLists.push(f);
+      });
+      setAvailableLists(flatLists);
+    } catch (error) {
+      console.error('Lỗi tải metadata:', error);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadTasks();
+      loadMetadata();
+    }, [])
+  );
+
+  const handleAddTask = async (priority) => {
+    if (!inputText.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng nhập nội dung công việc');
       return;
     }
-
-    // Tạo một công việc mới
     const newTask = {
-      id: Date.now().toString(), // Tạo ID ngẫu nhiên bằng thời gian thực
-      text: inputText,
-      type: type,
-      completed: false
+      id: `task_${Date.now()}`,
+      title: inputText.trim(),
+      priority,
+      tags: [],
+      dueDate: null,
+      startDate: null,
+      endDate: null,
+      startTime: null,
+      endTime: null,
+      isAllDay: false,
+      isCompleted: false,
+      isTrashed: false,
+      isWontDo: false,
+      listId: 'matrix', // chỉ hiển thị trong matrix, không xuất hiện ở Task
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
-
-    setTasks([...tasks, newTask]); // Cập nhật danh sách mới
-    setInputText(''); // Xóa trắng ô nhập
+    try {
+      await dbApi.createTask(newTask);
+      setInputText('');
+      await loadTasks();
+    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể thêm công việc');
+    }
   };
 
-  // 3. Hàm Đánh dấu Hoàn thành / Chưa hoàn thành
-  const toggleTask = (id) => {
-    setTasks(tasks.map(task => 
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ));
+  const updateTask = async (taskId, updates) => {
+    try {
+      await dbApi.updateTask(taskId, updates);
+      await loadTasks();
+    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể cập nhật công việc');
+    }
   };
 
-  // 4. Hàm Xóa công việc
-  const deleteTask = (id) => {
-    setTasks(tasks.filter(task => task.id !== id));
+  // Hàm toggle (hoàn thành/chưa hoàn thành)
+  const toggleTaskStatus = async (taskId) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      await updateTask(taskId, { isCompleted: !task.isCompleted });
+    }
   };
 
-  // 5. Khối giao diện tái sử dụng cho từng Phân vùng (Quadrant)
-  const MatrixBox = ({ title, subtitle, color, type }) => {
-    // Lọc ra các công việc thuộc về phân vùng này
-    const boxTasks = tasks.filter(task => task.type === type);
+  // Xóa mềm (chuyển vào thùng rác)
+  const softDeleteTask = async (taskId) => {
+    await updateTask(taskId, { isTrashed: true });
+  };
 
+  // Xóa vĩnh viễn
+  const hardDeleteTask = async (taskId) => {
+    Alert.alert(
+      'Xóa vĩnh viễn',
+      'Công việc sẽ bị xóa khỏi hệ thống, không thể khôi phục.',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await dbApi.deleteTask(taskId);
+              await loadTasks();
+            } catch (error) {
+              Alert.alert('Lỗi', 'Không thể xóa vĩnh viễn');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Lọc task theo priority, chưa bị xóa, và sắp xếp completed xuống cuối
+  const getTasksByPriority = (priority) => {
+    const filtered = tasks.filter(t => t.priority === priority && !t.isTrashed);
+    return filtered.sort((a, b) => Number(a.isCompleted) - Number(b.isCompleted));
+  };
+
+  const MatrixBox = ({ title, subtitle, color, priority }) => {
+    const boxTasks = getTasksByPriority(priority);
     return (
       <View style={[styles.box, { borderLeftColor: color }]}>
         <View style={styles.boxHeader}>
@@ -56,30 +139,21 @@ export default function MatrixScreen({ navigation }) {
             <Text style={[styles.boxTitle, { color }]}>{title}</Text>
             <Text style={[styles.boxSubtitle, { color }]}>{subtitle}</Text>
           </View>
-          {/* Nút bấm để thêm công việc vào vùng này */}
-          <TouchableOpacity onPress={() => handleAddTask(type)}>
+          <TouchableOpacity onPress={() => handleAddTask(priority)}>
             <Ionicons name="add-circle" size={32} color={color} />
           </TouchableOpacity>
         </View>
-
-        {/* Danh sách công việc của vùng này */}
-        {boxTasks.map((task) => (
-          <View key={task.id} style={styles.taskItem}>
-            <TouchableOpacity 
-              style={[styles.radio, task.completed && { backgroundColor: color, borderColor: color }]} 
-              onPress={() => toggleTask(task.id)}
-            >
-              {task.completed && <Ionicons name="checkmark" size={14} color="#fff" />}
-            </TouchableOpacity>
-            
-            <Text style={[styles.taskText, task.completed && styles.taskCompleted]}>
-              {task.text}
-            </Text>
-
-            <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteTask(task.id)}>
-              <Ionicons name="trash-outline" size={18} color="#FF6B6B" />
-            </TouchableOpacity>
-          </View>
+        {boxTasks.map(task => (
+          <TaskItem
+            key={task.id}
+            task={task}
+            onToggle={toggleTaskStatus}
+            onPressItem={() => {}} // không làm gì khi nhấn vào task
+            onLongPress={() => {
+              setSelectedTaskForMenu(task);
+              setMenuVisible(true);
+            }}
+          />
         ))}
       </View>
     );
@@ -87,24 +161,15 @@ export default function MatrixScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-    {/* Header với nút menu bên phải */}
-    <View style={styles.header}>
-      <Text style={styles.headerTitle}>Eisenhower Matrix</Text>
-      <TouchableOpacity
-        onPress={() => {
-          const parentNav = navigation.getParent?.();
-          if (parentNav?.openDrawer) parentNav.openDrawer();
-        }}
-        style={styles.menuButton}
-      >
-        <Ionicons name="menu-outline" size={28} color="#333" />
-      </TouchableOpacity>
-    </View>
-
-      {/* Ô nhập công việc mới */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Eisenhower Matrix</Text>
+        <TouchableOpacity onPress={() => navigation.getParent()?.openDrawer()}>
+          <Ionicons name="menu-outline" size={28} color="#333" />
+        </TouchableOpacity>
+      </View>
       <View style={styles.inputContainer}>
         <Ionicons name="pencil-outline" size={20} color="#888" />
-        <TextInput 
+        <TextInput
           style={styles.input}
           placeholder="Nhập công việc mới..."
           value={inputText}
@@ -112,14 +177,23 @@ export default function MatrixScreen({ navigation }) {
           placeholderTextColor="#888"
         />
       </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
-        {/* Gọi 4 phân vùng và truyền tham số `type` để lọc dữ liệu */}
-        <MatrixBox title="Do First" subtitle="Gấp & Quan trọng" color="#FF4B4B" type="Do First" />
-        <MatrixBox title="Schedule" subtitle="Quan trọng, Không gấp" color="#2D9CDB" type="Schedule" />
-        <MatrixBox title="Delegate" subtitle="Gấp, Không quan trọng" color="#F2C94C" type="Delegate" />
-        <MatrixBox title="Eliminate" subtitle="Không gấp, Không quan trọng" color="#9E9E9E" type="Eliminate" />
+      <ScrollView style={styles.scroll}>
+        <MatrixBox title="Do First" subtitle="Gấp & Quan trọng" color="#FF4B4B" priority={5} />
+        <MatrixBox title="Schedule" subtitle="Quan trọng, Không gấp" color="#F2C94C" priority={3} />
+        <MatrixBox title="Delegate" subtitle="Gấp, Không quan trọng" color="#2D9CDB" priority={1} />
+        <MatrixBox title="Eliminate" subtitle="Không gấp, Không quan trọng" color="#9E9E9E" priority={0} />
       </ScrollView>
+      <TaskContextMenu
+        visible={isMenuVisible}
+        task={selectedTaskForMenu}
+        availableTags={availableTags}
+        availableLists={availableLists}
+        onClose={() => setMenuVisible(false)}
+        onUpdate={updateTask}
+        onSoftDelete={softDeleteTask}
+        onHardDelete={hardDeleteTask}
+        onAddSubtask={() => {}} // không cần subtask trong matrix
+      />
     </SafeAreaView>
   );
 }

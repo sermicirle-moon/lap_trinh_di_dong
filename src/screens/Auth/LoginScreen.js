@@ -11,7 +11,8 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-
+  const [showPassword, setShowPassword] = useState(false);
+  
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Lỗi', 'Vui lòng nhập email và mật khẩu');
@@ -59,13 +60,22 @@ export default function LoginScreen({ navigation }) {
             autoCapitalize="none"
             keyboardType="email-address"
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Mật khẩu"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Mật khẩu"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <Ionicons 
+                name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                size={20} 
+                color="#888" 
+              />
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
             {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginText}>Log In</Text>}
@@ -86,7 +96,29 @@ const styles = StyleSheet.create({
   content: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 30 },
   title: { fontSize: 32, fontWeight: 'bold', marginTop: 20, color: '#333' },
   subtitle: { fontSize: 14, color: '#888', marginBottom: 40, textAlign: 'center' },
+  
+  // Style cho ô Email
   input: { width: '100%', borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 10, paddingHorizontal: 15, paddingVertical: 12, marginBottom: 15, backgroundColor: '#FFF' },
+  
+  // Style MỚI cho khung bọc Mật khẩu (Viền bọc ngoài)
+  passwordContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    width: '100%', 
+    borderWidth: 1, 
+    borderColor: '#E0E0E0', 
+    borderRadius: 10, 
+    paddingHorizontal: 15, 
+    marginBottom: 15, 
+    backgroundColor: '#FFF' 
+  },
+  
+  // Style MỚI cho ô nhập text mật khẩu (Không có viền, tự đẩy con mắt sang phải)
+  passwordInput: { 
+    flex: 1, 
+    paddingVertical: 12,
+  },
+  
   loginButton: { width: '100%', backgroundColor: '#2D9CDB', paddingVertical: 14, borderRadius: 10, alignItems: 'center', marginTop: 10 },
   loginText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
   registerText: { marginTop: 20, color: '#2D9CDB', fontSize: 14 }
