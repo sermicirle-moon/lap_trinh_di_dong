@@ -5,6 +5,16 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { dbApi } from '../../services/dbAPI';
 import { styles } from './styles';
+import { CalendarProvider, ExpandableCalendar, LocaleConfig } from 'react-native-calendars';
+
+LocaleConfig.locales['vi'] = {
+  monthNames: ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'],
+  monthNamesShort: ['Th1','Th2','Th3','Th4','Th5','Th6','Th7','Th8','Th9','Th10','Th11','Th12'],
+  dayNames: ['Chủ Nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'],
+  dayNamesShort: ['CN','T2','T3','T4','T5','T6','T7'],
+  today: "Hôm nay"
+};
+LocaleConfig.defaultLocale = 'vi';
 
 /* ----- Helper: local date string (YYYY-MM-DD) ----- */
 const getLocalDateString = (date) => {
@@ -324,33 +334,38 @@ export default function HabitsScreen({ navigation }) {
           </>
         )}
       </View>
-
+      {/* PHẦN LỊCH TUẦN MỚI THAY THẾ CHO CALENDAR STRIP */}
+    <View style={{ height: 150 }}> 
+      <CalendarProvider
+        date={selectedDate}
+        onDateChanged={(date) => setSelectedDate(date)}
+        showTodayButton
+        theme={{
+          todayButtonTextColor: '#2D9CDB',
+        }}
+      >
+        <ExpandableCalendar
+          firstDay={1} // Bắt đầu từ Thứ 2
+          horizontal={true}
+          hideArrows={false} // Hiện mũi tên để chuyển tuần nhanh
+          initialPosition={ExpandableCalendar.positions.CLOSED} // Mặc định chỉ hiện 1 hàng (tuần)
+          disablePan={false} // Cho phép kéo xuống để xem cả tháng nếu muốn
+          theme={{
+            selectedDayBackgroundColor: '#2D9CDB',
+            selectedDayTextColor: '#ffffff',
+            todayTextColor: '#2D9CDB',
+            dayTextColor: '#333',
+            textDisabledColor: '#d9e1e8',
+            dotColor: '#2D9CDB',
+            arrowColor: '#2D9CDB',
+            monthTextColor: '#333',
+            textMonthFontWeight: 'bold',
+          }}
+        />
+      </CalendarProvider>
+    </View>
       <ScrollView style={styles.scroll}>
         {/* Calendar strip (5 days) */}
-        <View style={styles.calendarStrip}>
-          {[...Array(5)].map((_, i) => {
-            const d = new Date();
-            d.setDate(d.getDate() + i - 2);
-            const dayStr = getLocalDateString(d);
-            return (
-              <TouchableOpacity
-                key={dayStr}
-                style={[styles.dayItem, selectedDate === dayStr && styles.activeDay]}
-                onPress={() => setSelectedDate(dayStr)}
-              >
-                <Text
-                  style={[
-                    styles.dayText,
-                    selectedDate === dayStr && styles.activeDayText,
-                  ]}
-                >
-                  {d.getDate()}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>
             Thói quen ngày {selectedDate.slice(5)}
